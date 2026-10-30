@@ -19,6 +19,8 @@ import { PlaceOrderWaiterComponent } from '@app/components/place-order-waiter/pl
 import { Roles } from '@app/shared/constants/roles';
 import { CustomSelectComponent } from '@app/shared/custom-components/custom-select/custom-select.component';
 
+const CUSTOMER_CHANGE_CUTOFF_MINUTES = 30;
+
 interface ReservationStatusView {
   class: string;
   label: string;
@@ -136,6 +138,28 @@ export class CardReservationComponent {
     );
   });
 
+  /** Customers can no longer cancel, edit or pre-order less than 30 minutes before the start (or after it). */
+  readonly customerLocked = computed(() => {
+    const reservation = this.r();
+    const minutesToStart =
+      (new Date(reservation.startTime).getTime() - Date.now()) / 60_000;
+
+    return (
+      this.role() === Roles.CUSTOMER &&
+      reservation.status === ReservationStatusCustomer.Reserved &&
+      minutesToStart < CUSTOMER_CHANGE_CUTOFF_MINUTES
+    );
+  });
+
+  readonly canOpenGroupOrder = computed(() => {
+    return (
+      this.role() === Roles.CUSTOMER &&
+      !this.customerLocked() &&
+      this.r().guestCount >= 2 &&
+      this.r().status === ReservationStatusCustomer.Reserved
+    );
+  });
+
   readonly isAnonymous = computed(() => {
     return !this.r().customerId;
   });
@@ -173,6 +197,10 @@ export class CardReservationComponent {
       queryParams,
     });
   }
+  onGroupOrder(): void {
+    void this.router.navigate(['/reservations', this.r().id, 'group-order']);
+  }
+
   onPreOrderWaiter(): void {
     if (this.preOrderItemCount() > 0) {
       this.navigateToWaiterPreOrder();

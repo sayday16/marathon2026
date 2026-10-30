@@ -19,6 +19,7 @@
     "build": "ng build",
     "postbuild": "node scripts/check-bundle.mjs",
     "watch": "ng build --watch --configuration development",
+    "test:hw": "ng test --watch=false --include src/app/components/group-orders --include src/app/pages/group-order-page --include src/app/services/group-orders --include src/app/shared/helpers",
     "test": "ng test",
     "lint": "ng lint",
     "lint-fix": "ng lint --fix",

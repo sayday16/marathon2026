@@ -125,21 +125,37 @@
   <div class="actions">
     @switch (r().status) {
       @case (ReservationStatusCustomer.Reserved) {
-        <button
-          type="button"
-          class="button button--tertiary button--large"
-          (click)="cancelReservation.emit(r().id)"
-        >
-          Cancel
-        </button>
+        @if (customerLocked()) {
+          <p class="locked-note" role="status">
+            Too late to change this reservation
+          </p>
+        } @else {
+          <button
+            type="button"
+            class="button button--tertiary button--large"
+            (click)="cancelReservation.emit(r().id)"
+          >
+            Cancel
+          </button>
+        }
 
-        @if (role() === Roles.CUSTOMER) {
+        @if (role() === Roles.CUSTOMER && !customerLocked()) {
           <button
             type="button"
             class="button button--secondary button--large"
             (click)="editReservation.emit(r())"
           >
             Edit
+          </button>
+        }
+
+        @if (canOpenGroupOrder()) {
+          <button
+            type="button"
+            class="button button--secondary button--large"
+            (click)="onGroupOrder()"
+          >
+            Group Pre-Order
           </button>
         }
 
@@ -161,7 +177,7 @@
               Pre-order
             </button>
           }
-        } @else if (role() === Roles.CUSTOMER) {
+        } @else if (role() === Roles.CUSTOMER && !customerLocked()) {
           <button
             type="button"
             class="button button--primary button--large"
