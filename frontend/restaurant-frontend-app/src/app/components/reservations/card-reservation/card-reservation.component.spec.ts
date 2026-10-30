@@ -117,6 +117,12 @@ describe('CardReservationComponent', () => {
       expect(buttonTexts()).not.toContain('Pre-order');
     });
 
+    it('keeps Group Pre-Order available until the reservation starts', () => {
+      showReservation(reservationStartingIn(20 * MINUTE_MS));
+
+      expect(buttonTexts()).toContain('Group Pre-Order');
+    });
+
     it('still allows changes 31 minutes before the start', () => {
       showReservation(reservationStartingIn(31 * MINUTE_MS));
 
