@@ -18,9 +18,6 @@ public class GetAvailableTimeSlotsHandler : IApiRequestHandler
     private static readonly string ReservationsTableName = ResourceNames.ReservationsTableName;
     private static readonly string ReservationsTableGlobalIndex = ResourceNames.ReservationsTableGlobalIndex;
 
-    private static readonly TimeSpan ReservationDuration = TimeSpan.FromMinutes(90);
-    private static readonly TimeSpan GapDuration = TimeSpan.FromMinutes(15);
-
     private readonly IDynamoDBContext _dbContext;
 
     public GetAvailableTimeSlotsHandler(IDynamoDBContext dbContext)
@@ -59,52 +56,8 @@ public class GetAvailableTimeSlotsHandler : IApiRequestHandler
         context.Logger.Log($"Table id: {tableId}");
         context.Logger.Log($"Reservations: {JsonSerializer.Serialize(reservations)}");
 
-        var workingDayStart = new DateTime(startTime.Year, startTime.Month, startTime.Day, 10, 0, 0, DateTimeKind.Unspecified);
-        var workingDayEnd = new DateTime(startTime.Year, startTime.Month, startTime.Day, 22, 0, 0, DateTimeKind.Unspecified);
-
-        var slots = new List<TimeSlotResponse>();
-        var marginTo90Minutes =
-            ReservationDuration.TotalMinutes - ((startTime - workingDayStart).TotalMinutes % ReservationDuration.TotalMinutes);
-        DateTime current;
-        if (marginTo90Minutes < ReservationDuration.TotalMinutes)
-        {
-            current = startTime.AddMinutes(marginTo90Minutes);
-        }
-        else
-        {
-            current = startTime;
-        }
-
-        while (current + ReservationDuration <= workingDayEnd)
-        {
-            var potentialStart = current;
-            var potentialEnd = potentialStart + ReservationDuration;
-
-            var overlappingReservation = reservations
-                .FirstOrDefault(r => IsOverlapping(current, current + ReservationDuration, r.StartTime, r.EndTime));
-
-            if (overlappingReservation == null)
-            {
-                slots.Add(new TimeSlotResponse
-                {
-                    Start = potentialStart,
-                    End = potentialEnd
-                });
-
-                current = potentialEnd + GapDuration;
-            }
-            else
-            {
-                // end time of reservation + gap
-                current = overlappingReservation.EndTime.Add(GapDuration);
-            }
-        }
+        var slots = TimeSlotCalculator.Calculate(startTime, reservations);
 
         return ResponseBuilder.CreateSuccessResponse(slots, 200);
-    }
-
-    bool IsOverlapping(DateTime slotStart, DateTime slotEnd, DateTime reservationStart, DateTime reservationEnd)
-    {
-        return slotStart < reservationEnd && reservationStart < slotEnd;
     }
 }
