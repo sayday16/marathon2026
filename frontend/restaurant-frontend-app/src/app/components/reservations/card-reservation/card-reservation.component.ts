@@ -151,12 +151,13 @@ export class CardReservationComponent {
     );
   });
 
+  /** The group order stays reachable until the reservation starts: guests can still join and the Owner can submit. */
   readonly canOpenGroupOrder = computed(() => {
     return (
       this.role() === Roles.CUSTOMER &&
-      !this.customerLocked() &&
       this.r().guestCount >= 2 &&
-      this.r().status === ReservationStatusCustomer.Reserved
+      this.r().status === ReservationStatusCustomer.Reserved &&
+      new Date(this.r().startTime).getTime() > Date.now()
     );
   });
 
