@@ -49,6 +49,25 @@ describe('CardReservationComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('Booking time', () => {
+    function bookedLine(): string | undefined {
+      return (fixture.nativeElement as HTMLElement).querySelector('.booked-at')?.textContent?.trim();
+    }
+
+    it('shows when the reservation was made', () => {
+      fixture.componentRef.setInput('r', { ...RESERVATION, createdAt: '2026-11-01T11:20:00Z' });
+      fixture.detectChanges();
+      expect(bookedLine()).toContain('Booked');
+      expect(bookedLine()).toContain('2026');
+    });
+
+    it('shows nothing for a reservation made before the backend stored the time', () => {
+      fixture.componentRef.setInput('r', { ...RESERVATION, createdAt: null });
+      fixture.detectChanges();
+      expect(bookedLine()).toBeUndefined();
+    });
+  });
+
   describe('Group Pre-Order button', () => {
     function groupOrderButton(): HTMLButtonElement | undefined {
       const buttons = [...(fixture.nativeElement as HTMLElement).querySelectorAll('button')];

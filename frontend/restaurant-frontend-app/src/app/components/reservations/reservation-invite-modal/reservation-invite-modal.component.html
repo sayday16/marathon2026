@@ -18,6 +18,12 @@
       <dt>Guests</dt>
       <dd>{{ guestsLabel() }}</dd>
     </div>
+    @if (reservation().createdAt) {
+      <div class="info-row">
+        <dt>Booked</dt>
+        <dd class="booked-at">{{ reservation().createdAt | date: 'MMM d, y, HH:mm' }}</dd>
+      </div>
+    }
   </dl>
 
   @if (showInviteField()) {

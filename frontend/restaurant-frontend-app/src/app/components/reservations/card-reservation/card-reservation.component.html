@@ -69,6 +69,12 @@
       </span>
     </div>
 
+    @if (r().createdAt) {
+      <div class="details-line">
+        <span class="details booked-at">Booked {{ r().createdAt | date: 'MMM d, y, shortTime' }}</span>
+      </div>
+    }
+
     @if (role() === Roles.WAITER) {
       <div class="details-line">
         <span class="details">

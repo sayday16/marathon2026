@@ -144,6 +144,7 @@ export class ReservationDashboardComponent implements OnInit {
         reservation.hasSubmittedPreOrder,
         preOrder: reservation.preOrder,
         preOrders: reservation.preOrders,
+        createdAt: reservation.createdAt,
       };
     });
 
