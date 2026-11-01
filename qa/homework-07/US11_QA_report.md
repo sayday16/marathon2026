@@ -3,7 +3,7 @@
 | | |
 |---|---|
 | Story | [Draft] US11_Guest Viewing Reservation Menu (Epic: Order Management, role: Guest) |
-| Design | Figma "EPAM IT Marathon 6.0", frame "Placing pre-order by guest \| Menu" (node 111683:86716) |
+| Design | Figma "EPAM IT Marathon 6.0", frame "Placing pre-order by guest \| Menu" (node 111683:86716), reviewed through the Figma connector on a copy of the course file; reference image: `attachments/figma-guest-menu.png` |
 | Tested build | Screenshot of the implemented screen: `https://d28jftogiwtein.cloudfront.net/join/<token>` (Guest, Menu page) |
 | Environment | P_PRD |
 | Deliverables | 1. Requirements analysis, 2. Test cases, 3. Test results, 4. Defect reports |
@@ -11,8 +11,8 @@
 ## Summary
 
 - Requirement issues found: **20** (High: 6, Medium: 12, Low: 2).
-- Test cases: **37** (Passed: 8, Failed: 8, Not executed: 21). Pass rate of the executed cases: 8/16 = 50%.
-- Defects: **7** (Severity - Major: 2, Minor: 4, Trivial: 1; Priority - Medium: 4, Low: 3).
+- Test cases: **37** (Passed: 7, Failed: 9, Not executed: 21). Pass rate of the executed cases: 7/16 = 44%.
+- Defects: **8** (Severity - Major: 2, Minor: 5, Trivial: 1; Priority - Medium: 4, Low: 4).
 - "Not executed" means the check can not be done from the single screenshot (cart content, admin changes, mobile viewport, negative links). They need a live environment.
 
 ## 1. Requirements analysis (shortcomings of the user story)
@@ -33,7 +33,7 @@
 | R12 | AC3 | Missing requirement | High | Nothing is said about the result of pressing "Pre-order": feedback (toast, cart counter), quantity (adding the same dish twice - increase or block?), maximum quantity, adding several different dishes, removing a dish from the subcart, adding while offline or after the dish became unavailable. | Most of the functional behaviour has to be guessed; high risk of defects found only after release. | Describe the happy path result and the negative/boundary cases (duplicates, limits, errors). |
 | R13 | AC3 | Inconsistency | Low | The button label is written "Pre-order" in AC3 and "Pre-Order" in the design; the label is given only as an example ("e.g."). | Label can differ between the story, the design and the application. | Fix the exact label (and its capitalisation) in one place. |
 | R14 | AC4 | Inconsistency | Medium | Three different names for the unavailable state: "On Stop" (AC4), "Sold Out" (Figma badge) and "Out Of Stock" (implementation). | Developers and testers can not tell which text is correct; user-facing wording is inconsistent. | Choose one internal state and one user-facing label. |
-| R15 | AC4 | Ambiguity | Medium | "Clearly indicated as unavailable" and "cannot be selected" are subjective: it is not defined whether the card is greyed, whether the button is hidden or disabled, and whether the whole card (not only the button) must be non-interactive, also for keyboard and screen-reader users. | Different implementations are all "correct"; no way to verify the accessibility of the disabled state. | Specify the visual (badge text, greyed name and price), the control state (disabled / hidden) and the accessible name/state. |
+| R15 | AC4 | Ambiguity | Medium | "Clearly indicated as unavailable" and "cannot be selected" are subjective: it is not defined whether the card is greyed, whether the button is hidden or disabled, and whether the whole card (not only the button) must be non-interactive, also for keyboard and screen-reader users. | Different implementations are all "correct"; no way to verify the accessibility of the disabled state. | Specify the visual (badge text, greyed name and price), the control state (disabled / hidden; the design hides the button on a Sold Out card) and the accessible name/state. |
 | R16 | AC5 | Untestable | High | "The menu reflects the current data at the time the Guest opens or refreshes the screen": "current" and the allowed delay are not defined, nothing is said about an update while the screen stays open (a dish goes On Stop after the guest opened the menu), caching and loading/error states. | A guest can add a dish that is already unavailable; there is no way to verify the "freshness" objectively. | Define the data source/caching rule, the maximum staleness, the behaviour on the add action for a dish that became unavailable, and loading/error states. |
 | R17 | Missing | Missing requirement | Medium | No requirements for: empty menu, loading and error states, retry, pagination/lazy loading of a long menu, search, dish details (description, nutrition), behaviour on click on the card. | Screens in these states will be implemented differently or not at all. | Add the states and the explicit "out of scope" list. |
 | R18 | Missing | Missing requirement | Medium | No non-functional requirements: responsive layout (guests join from a phone by a link), accessibility (keyboard, contrast, labels), performance (image loading), localisation/currency. | Key usage scenario (mobile guest) is not covered by acceptance. | Add at least supported viewports/browsers, accessibility level and a page-load target. |
@@ -153,7 +153,7 @@ Format follows the course template (ID, Title, Pre-conditions, Steps, Expected r
 
 **Expected result:**
 1. Strip text: "You are making a pre-order for the reservation <address>, Table <n>, <date>, <time from - to>".
-2. Date is present (Figma: "Oct 17, 2026, 12:00 - 13:00").
+2. Date is present (Figma: "Oct 17, 2026, 12:00 - 13:30").
 
 ### ID: 8 - Verify that the breadcrumb "Main page > Menu" is displayed
 
@@ -517,9 +517,9 @@ Format follows the course template (ID, Title, Pre-conditions, Steps, Expected r
 **Expected result:**
 1. The card has an unavailable badge and the name, price and image are greyed out.
 
-### ID: 29 - Verify that the action button of an unavailable dish is disabled
+### ID: 29 - Verify that an unavailable dish has no [Pre-Order] button (Sold Out card in the design)
 
-**Status: Passed** (Grey disabled-looking button on both unavailable cards (visual check only).)
+**Status: Failed** (Defect 8 (a disabled [Pre-Order] button is displayed; it is not clickable, so AC4 is met).)
 
 **Pre-conditions:**
 - The Owner has generated and shared a valid link
@@ -529,10 +529,10 @@ Format follows the course template (ID, Title, Pre-conditions, Steps, Expected r
 
 **Steps:**
 1. Open the Menu page as a Guest.
-2. Look at the [Pre-Order] button of the unavailable dish.
+2. Look at the bottom of the card of the unavailable dish.
 
 **Expected result:**
-1. The button is disabled (greyed out) or not displayed.
+1. The card has no [Pre-Order] button (Figma, "Sold Out" card). If a button is kept, it must be disabled (AC4).
 
 ### ID: 30 - Verify that an unavailable dish can not be added to the cart by click or keyboard
 
@@ -709,7 +709,7 @@ Env: P_PRD | Priority: Medium | Severity: Minor | Found by: TC7
 
 **Actual result:** "You are making a pre-order for the reservation 48 Rustaveli Avenue, Table 1, 15:30 - 17:00" - the date is missing.
 
-**Expected result:** "You are making a pre-order for the reservation 48 Rustaveli Avenue, Table 1, Oct 17, 2026, 12:00 - 13:00" - the date is shown before the time (Figma).
+**Expected result:** "You are making a pre-order for the reservation 48 Rustaveli Avenue, Table 1, Oct 17, 2026, 12:00 - 13:30" - the date is shown before the time (Figma).
 
 **Attachments:** Screenshot, area: the green reservation strip. (file: `implemented-menu-screenshot.webp`)
 
@@ -809,3 +809,23 @@ Env: P_PRD | Priority: Low | Severity: Minor | Found by: TC13
 **Expected result:** The default value is "Popular First"; options are Popular First, Newest First, Price: Low to High, Price: High to Low (Figma).
 
 **Attachments:** Screenshot, area: the "Sort by" control. The dropdown options are not visible on the screenshot and still have to be checked. (file: `implemented-menu-screenshot.webp`)
+
+### ID: 8 - A disabled [Pre-Order] button is displayed on the cards of unavailable dishes, the design shows no button
+
+Env: P_PRD | Priority: Low | Severity: Minor | Found by: TC29
+
+**Pre-conditions:**
+- The Owner has generated and shared a valid link
+- Reservation status is "Reserved"
+- A dish with the status "On Stop" exists
+
+**Steps:**
+1. Guest is redirected by the invited link and joins the session.
+2. Open the Menu page.
+3. Compare the cards "Fresh Avocado Toast" and "Truffle Mushroom Risotto" with the Sold Out card in the design.
+
+**Actual result:** Grey [Pre-Order] buttons are displayed under both unavailable dishes.
+
+**Expected result:** The Sold Out card has no [Pre-Order] button (Figma: "Green Asparagus Salad"). If the product decides to keep it, it must stay disabled and not focusable (AC4).
+
+**Attachments:** Screenshot, area: the buttons of the first two cards. (file: `implemented-menu-screenshot.webp`)
