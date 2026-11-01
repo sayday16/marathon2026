@@ -105,6 +105,12 @@
           <div>
             <h3>Time</h3>
             <p class="subtitle">Please choose your preferred time from the dropdowns below</p>
+            @if (slotsDate) {
+              <p class="subtitle slots-date">Free times on {{ slotsDate }}</p>
+            }
+            @if (noSlotsAhead) {
+              <p class="subtitle no-slots">No free time for this table in the next 14 days.</p>
+            }
           </div>
           <div class="time-selectors">
             <div class="time-selector">

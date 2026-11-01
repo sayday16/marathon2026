@@ -10,7 +10,11 @@ import { CustomSelectComponent } from '@app/shared/custom-components/custom-sele
 import { CustomNumberComponent } from '@app/shared/custom-components/custom-number/custom-number.component';
 import { Table } from '@app/models/tables/table.model';
 import { TimeRange } from '@app/models/tables/time-range.model';
-import { addAndRoundBookingTime, formatTime } from '@app/shared/helpers/date-helpers';
+import { addAndRoundBookingTime, formatDate, formatTime } from '@app/shared/helpers/date-helpers';
+
+const MILLISECONDS_IN_DAY = 24 * 60 * 60 * 1000;
+const DAYS_TO_LOOK_AHEAD = 14;
+const OPENING_TIME = '10:00';
 
 import { LocationsService } from '@app/services/locations/locations.service';
 import { WaitersService } from '@app/services/waiters/waiters.service';
@@ -66,6 +70,10 @@ export class WaiterMakeReservationComponent implements OnInit {
 
   tables: Table[] = [];
   selectedTable?: Table;
+
+  /** The day the offered times belong to, and whether no free time was found on the days ahead. */
+  slotsDate = '';
+  noSlotsAhead = false;
 
   availableTimeSlots: TimeRange[] = [];
   selectedTimeRange: TimeRange = { start: '', end: '' };
@@ -171,23 +179,39 @@ export class WaiterMakeReservationComponent implements OnInit {
   loadTimeSlotsForSelectedTable() {
     if (!this.selectedTable) return;
 
+    this.slotsDate = '';
+    this.noSlotsAhead = false;
+    this.loadTimeSlotsForDay(this.selectedTable, 0);
+  }
+
+  /** Looks for free slots today and, when there are none (for example late in the evening), on the next days. */
+  private loadTimeSlotsForDay(table: Table, dayOffset: number): void {
     const now = new Date();
-    const today = now.toISOString().split('T')[0];
-    const currentTime = now.toISOString();
-    const minimumBookingTime = addAndRoundBookingTime(currentTime);
+    const day = new Date(now.getTime() + dayOffset * MILLISECONDS_IN_DAY);
+    const date = day.toISOString().split('T')[0];
+    // Today starts at the earliest bookable time, the next days at the opening of the restaurant.
+    const time = dayOffset === 0 ? formatTime(addAndRoundBookingTime(now.toISOString())) : OPENING_TIME;
 
     this.tableService
-      .getTableTimeSlots(this.selectedTable.id, today, formatTime(minimumBookingTime))
+      .getTableTimeSlots(table.id, date, time)
       .pipe(catchError(() => of([])))
       .subscribe((slots) => {
-        this.availableTimeSlots = slots;
+        if (table.id !== this.selectedTable?.id) {
+          return;
+        }
 
-        if (this.availableTimeSlots.length > 0) {
-          this.selectedTimeRange = this.availableTimeSlots[0];
-          this.selectedStartTime = this.selectedTimeRange.start;
-          this.selectedEndTime = this.selectedTimeRange.end;
+        if (slots.length > 0) {
+          this.availableTimeSlots = slots;
+          this.selectedTimeRange = slots[0];
+          this.selectedStartTime = slots[0].start;
+          this.selectedEndTime = slots[0].end;
+          this.slotsDate = formatDate(slots[0].start);
+        } else if (dayOffset < DAYS_TO_LOOK_AHEAD) {
+          this.loadTimeSlotsForDay(table, dayOffset + 1);
         } else {
+          this.availableTimeSlots = [];
           this.clearTimeSelection();
+          this.noSlotsAhead = true;
         }
       });
   }
