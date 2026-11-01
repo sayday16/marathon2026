@@ -74,6 +74,9 @@ export class CardReservationComponent {
 
   readonly cancelReservation = output<string>();
 
+  /** The customer hides a cancelled reservation from the list. */
+  readonly dismissReservation = output<string>();
+
   readonly editReservation =
     output<ReservationCustomer>();
 

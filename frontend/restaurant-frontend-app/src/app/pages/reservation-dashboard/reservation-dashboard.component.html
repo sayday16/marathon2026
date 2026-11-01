@@ -11,14 +11,15 @@
   <p class="reservation-empty">
     Please wait while we load your reservations.
   </p>
-} @else if (reservations().length > 0) {
+} @else if (visibleReservations().length > 0) {
   <ul class="reservation-list">
-    @for (reservation of reservations(); track reservation.id) {
+    @for (reservation of visibleReservations(); track reservation.id) {
       <app-card-reservation
         [r]="reservation"
         [role]="role()"
         [statusEnum]="statusEnum"
         (cancelReservation)="cancelReservation($event)"
+        (dismissReservation)="dismissReservation($event)"
         (editReservation)="openEditModal($event)"
         (leaveFeedbackReservation)="openFeedback($event)"
         (updateFeedbackReservation)="openFeedback($event)"

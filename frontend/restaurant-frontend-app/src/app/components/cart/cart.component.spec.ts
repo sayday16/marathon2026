@@ -118,6 +118,28 @@ describe('CartComponent', () => {
     ).toEqual([0]);
   });
 
+  it('opens the menu in the pre-order mode of the order reservation on Add dish', () => {
+    component.orders.set([
+      {
+        orderId: 'order-1',
+        status: 0,
+        reservationId: 'res-1',
+        reservationAddress: 'TEST 1 Test Street, Kyiv',
+        reservationTime: 'Nov 02, 2026, 4:15 PM - 5:45 PM',
+      },
+    ] as Order[]);
+
+    component.addDishToOrder('order-1');
+
+    expect(routerMock.navigate).toHaveBeenCalledWith(['/menu'], {
+      queryParams: {
+        preOrder: 'true',
+        reservationId: 'res-1',
+        reservationLabel: 'TEST 1 Test Street, Kyiv, Nov 02, 2026, 4:15 PM - 5:45 PM',
+      },
+    });
+  });
+
   it('should navigate to reservations when goToReservations is called', () => {
     component.goToReservations();
 

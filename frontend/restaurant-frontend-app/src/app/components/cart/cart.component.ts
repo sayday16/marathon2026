@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 
 import { Order } from '@app/models/orders/order.model';
 import { PreOrdersService } from '@app/services/pre-orders/pre-orders.service';
+import { buildPreOrderQueryParamsForOrder } from '@app/shared/helpers/pre-order-helpers';
 
 import { CancelOrderModalComponent } from './components/cancel-order-modal/cancel-order-modal.component';
 import { NotSubmittedOrderComponent } from './components/not-submitted-order/not-submitted-order.component';
@@ -178,8 +179,12 @@ export class CartComponent implements OnInit {
   }
 
   addDishToOrder(orderId: string): void {
-    console.log(`Adding a dish to order ${orderId}`);
-    void this.router.navigate(['/menu']);
+    const order = this.unsubmittedOrders().find((item) => item.orderId === orderId);
+
+    // The menu shows the Pre-Order buttons only in the pre-order mode of a reservation.
+    void this.router.navigate(['/menu'], {
+      queryParams: order ? buildPreOrderQueryParamsForOrder(order) : undefined,
+    });
   }
 
   updateDishQuantity(
