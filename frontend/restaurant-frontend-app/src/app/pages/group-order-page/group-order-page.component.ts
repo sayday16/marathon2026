@@ -94,11 +94,16 @@ export class GroupOrderPageComponent {
       .getGroupInvite$(this.reservationId)
       .pipe(
         switchMap((invite) =>
-          forkJoin({
-            sessions: this.groupOrdersService.getSessions$(invite.GroupReservationId),
-            ownerSessionId: this.groupOrdersService.getOwnerSessionId$(this.reservationId),
-            status: this.groupOrdersService.getStatus$(invite.GroupReservationId),
-          }).pipe(map((data) => ({ invite, ...data }))),
+          // The Owner's own session is created on demand by this call, so it has to finish before the list is read:
+          // otherwise the first load can come back without the «My Pre-Order» card.
+          this.groupOrdersService.getOwnerSessionId$(this.reservationId).pipe(
+            switchMap((ownerSessionId) =>
+              forkJoin({
+                sessions: this.groupOrdersService.getSessions$(invite.GroupReservationId),
+                status: this.groupOrdersService.getStatus$(invite.GroupReservationId),
+              }).pipe(map((data) => ({ invite, ownerSessionId, ...data }))),
+            ),
+          ),
         ),
         takeUntilDestroyed(this.destroyRef),
       )
