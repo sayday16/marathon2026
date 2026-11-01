@@ -1,5 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpContext } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
+import { SKIP_ERROR_TOAST } from '@app/auth/skip-error-toast.context';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 import { Observable } from 'rxjs';
 
@@ -33,6 +34,9 @@ export class FeedbackQrService {
     const params = new URLSearchParams({
       reservationId: reservationId,
     });
-    return this.http.get<string>(`${url}?${params.toString()}`);
+    // The window explains a failure itself, so the general error toast is skipped.
+    return this.http.get<string>(`${url}?${params.toString()}`, {
+      context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+    });
   }
 }
