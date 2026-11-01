@@ -11,7 +11,7 @@
         <div class="order-item-dish">
           <img
             class="dish-image"
-            [src]="item.dish.imageUrl"
+            [src]="item.dish.imageUrl || defaultDishImage"
             [alt]="item.dish.name"
             width="96"
             height="96"

@@ -18,6 +18,9 @@ import { Order } from '@app/models/orders/order.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotSubmittedOrderComponent {
+  /** The API returns no image for dishes that were added without one; the menu pages show the same placeholder. */
+  readonly defaultDishImage = 'assets/img/dish.png';
+
   readonly order = input.required<Order>();
 
   readonly submitted = output<string>();

@@ -60,4 +60,26 @@ describe('NotSubmittedOrderComponent', () => {
   it('should calculate the total price', () => {
     expect(component.totalPrice()).toBe(20);
   });
+
+  describe('dish image', () => {
+    function imageSource(): string | null {
+      return (fixture.nativeElement as HTMLElement)
+        .querySelector('.order-item-dish .dish-image')
+        ?.getAttribute('src') ?? null;
+    }
+
+    it('shows the placeholder when the API returns no image', () => {
+      expect(imageSource()).toBe('assets/img/dish.png');
+    });
+
+    it('shows the image of the dish when there is one', () => {
+      fixture.componentRef.setInput('order', {
+        ...order,
+        orderItems: [{ quantity: 1, dish: { id: 'dish-1', price: 10, imageUrl: 'https://img.test/tom-yum.jpg' } }],
+      } as Order);
+      fixture.detectChanges();
+
+      expect(imageSource()).toBe('https://img.test/tom-yum.jpg');
+    });
+  });
 });
