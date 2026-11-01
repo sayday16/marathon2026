@@ -19,7 +19,8 @@ public static class ReservationMapper
         CustomerId = context.CustomerId,
         WaiterId = context.WaiterId!,
         CreatedByWaiter = context.CreatedByWaiter,
-        Status = ReservationStatus.Reserved
+        Status = ReservationStatus.Reserved,
+        CreatedAt = DateTime.UtcNow
     };
 
 
@@ -38,5 +39,6 @@ public static class ReservationMapper
         CustomerId = reservation.CustomerId, // for waiter dashboard
         HasSubmittedPreOrder = order is not null && order.Status == OrderStatus.Submitted,
         GuestInviteLinkAvailable = guestInviteLinkAvailable,
+        CreatedAt = reservation.CreatedAt,
     };
 }

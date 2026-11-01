@@ -462,7 +462,8 @@ Response: `201 Created`
   "waiterId": "string",
   "locationAddress": "string",
   "restaurantName": "Green & Tasty",
-  "hasSubmittedPreOrder": false
+  "hasSubmittedPreOrder": false,
+  "createdAt": "2026-08-01T10:15:00Z|null"
 }
 ```
 
@@ -481,7 +482,8 @@ Response: `200 OK`
     "waiterId": "string",
     "locationAddress": "string",
     "restaurantName": "Green & Tasty",
-    "hasSubmittedPreOrder": false
+    "hasSubmittedPreOrder": false,
+    "createdAt": "2026-08-01T10:15:00Z|null"
   }
 ]
 ```
@@ -500,7 +502,8 @@ Response: `200 OK`
   "waiterId": "string",
   "locationAddress": "string",
   "restaurantName": "Green & Tasty",
-  "hasSubmittedPreOrder": false
+  "hasSubmittedPreOrder": false,
+  "createdAt": "2026-08-01T10:15:00Z|null"
 }
 ```
 
