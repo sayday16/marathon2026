@@ -49,6 +49,30 @@ describe('CardReservationComponent', () => {
     expect(component).toBeTruthy();
   });
 
+  describe('Cancelled reservation', () => {
+    function dismissButton(): HTMLButtonElement | null {
+      return (fixture.nativeElement as HTMLElement).querySelector('.dismiss-btn');
+    }
+
+    it('lets the customer remove it from the list', () => {
+      spyOn(component.dismissReservation, 'emit');
+      fixture.componentRef.setInput('r', { ...RESERVATION, status: ReservationStatusCustomer.Cancelled });
+      fixture.componentRef.setInput('role', 'Customer');
+      fixture.detectChanges();
+
+      dismissButton()?.click();
+
+      expect(component.dismissReservation.emit).toHaveBeenCalledWith('res-1');
+    });
+
+    it('has no remove button on a reservation that is still active', () => {
+      fixture.componentRef.setInput('role', 'Customer');
+      fixture.detectChanges();
+
+      expect(dismissButton()).toBeNull();
+    });
+  });
+
   describe('Booking time', () => {
     function bookedLine(): string | undefined {
       return (fixture.nativeElement as HTMLElement).querySelector('.booked-at')?.textContent?.trim();
@@ -57,8 +81,7 @@ describe('CardReservationComponent', () => {
     it('shows when the reservation was made', () => {
       fixture.componentRef.setInput('r', { ...RESERVATION, createdAt: '2026-11-01T11:20:00Z' });
       fixture.detectChanges();
-      expect(bookedLine()).toContain('Booked');
-      expect(bookedLine()).toContain('2026');
+      expect(bookedLine()).toMatch(/^Booked Nov 1, 2026, \d{1,2}:\d{2} (AM|PM)$/);
     });
 
     it('shows nothing for a reservation made before the backend stored the time', () => {

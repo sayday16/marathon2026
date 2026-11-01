@@ -71,7 +71,7 @@
 
     @if (r().createdAt) {
       <div class="details-line">
-        <span class="details booked-at">Booked {{ r().createdAt | date: 'MMM d, y, shortTime' }}</span>
+        <span class="details booked-at">Booked {{ r().createdAt | date: 'MMM d, y, h:mm a' }}</span>
       </div>
     }
 
@@ -190,6 +190,18 @@
             (click)="onPreOrder()"
           >
             Pre-order
+          </button>
+        }
+      }
+
+      @case (ReservationStatusCustomer.Cancelled) {
+        @if (role() === Roles.CUSTOMER) {
+          <button
+            type="button"
+            class="button button--tertiary button--large dismiss-btn"
+            (click)="dismissReservation.emit(r().id)"
+          >
+            Remove from list
           </button>
         }
       }

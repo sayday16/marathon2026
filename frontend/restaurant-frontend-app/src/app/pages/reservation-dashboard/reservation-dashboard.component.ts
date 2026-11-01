@@ -87,6 +87,13 @@ export class ReservationDashboardComponent implements OnInit {
   readonly reservations = signal<ReservationCustomer[]>([]);
   readonly reservationsLoaded = signal(false);
 
+  /** Cancelled reservations the customer removed from the list (remembered in this browser). */
+  private readonly dismissedIds = signal<ReadonlySet<string>>(new Set());
+
+  readonly visibleReservations = computed(() =>
+    this.reservations().filter((reservation) => !this.dismissedIds().has(reservation.id)),
+  );
+
   readonly selectedReservation =
     signal<ReservationCustomer | null>(null);
 
@@ -172,8 +179,34 @@ export class ReservationDashboardComponent implements OnInit {
     this.lastName.set(user.lastName ?? '');
     this.role.set(user.role);
     this.customerId.set(user.id);
+    this.dismissedIds.set(this.readDismissedIds());
 
     this.loadReservations();
+  }
+
+  dismissReservation(id: string): void {
+    const dismissed = new Set(this.dismissedIds());
+    dismissed.add(id);
+    this.dismissedIds.set(dismissed);
+
+    try {
+      localStorage.setItem(this.dismissedStorageKey(), JSON.stringify([...dismissed]));
+    } catch {
+      // Storage can be blocked: the reservation is still hidden until the page is reloaded.
+    }
+  }
+
+  private dismissedStorageKey(): string {
+    return `dismissedReservations:${this.customerId()}`;
+  }
+
+  private readDismissedIds(): Set<string> {
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem(this.dismissedStorageKey()) ?? '[]');
+      return new Set(Array.isArray(stored) ? stored.filter((value): value is string => typeof value === 'string') : []);
+    } catch {
+      return new Set();
+    }
   }
 
   cancelReservation(id: string): void {

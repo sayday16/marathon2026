@@ -9,6 +9,21 @@ export interface PreOrderReservation {
   endTime: Date | string;
 }
 
+export interface PreOrderOrder {
+  reservationId: string;
+  reservationAddress: string;
+  reservationTime: string;
+}
+
+/** The same menu mode for an order that already exists (the cart knows its address and time as ready text). */
+export function buildPreOrderQueryParamsForOrder(order: PreOrderOrder): Params {
+  return {
+    preOrder: 'true',
+    reservationId: order.reservationId,
+    reservationLabel: [order.reservationAddress, order.reservationTime].filter(Boolean).join(', '),
+  };
+}
+
 /** Query params that switch the menu page into the pre-order mode of one reservation. */
 export function buildPreOrderQueryParams(reservation: PreOrderReservation): Params {
   const startTime = new Date(reservation.startTime);

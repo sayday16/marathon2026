@@ -1,4 +1,4 @@
-import { buildPreOrderQueryParams, PreOrderReservation } from './pre-order-helpers';
+import { buildPreOrderQueryParams, buildPreOrderQueryParamsForOrder, PreOrderReservation } from './pre-order-helpers';
 
 const RESERVATION: PreOrderReservation = {
   id: 'res-1',
@@ -29,6 +29,20 @@ describe('buildPreOrderQueryParams', () => {
 
     expect(label).toContain('Window 4');
     expect(label).not.toContain('table-1');
+  });
+
+  it('builds the same mode for an order from its address and time text', () => {
+    const params = buildPreOrderQueryParamsForOrder({
+      reservationId: 'res-9',
+      reservationAddress: 'TEST 1 Test Street, Kyiv',
+      reservationTime: 'Nov 02, 2026, 4:15 PM - 5:45 PM',
+    });
+
+    expect(params).toEqual({
+      preOrder: 'true',
+      reservationId: 'res-9',
+      reservationLabel: 'TEST 1 Test Street, Kyiv, Nov 02, 2026, 4:15 PM - 5:45 PM',
+    });
   });
 
   it('accepts dates that came from JSON as strings', () => {
