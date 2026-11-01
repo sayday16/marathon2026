@@ -228,8 +228,10 @@ public class ReservationService : IReservationService
         var reservations = await _reservationRepository.GetReservationsByTableIdAsync(tableId);
         var buffer = TimeSpan.FromMinutes(15);
 
+        // Cancelled reservations free their time, the same rule as the free slots offered by TimeSlotCalculator.
         var hasOverlap = reservations.Any(r =>
             EqualityHelper.NotEqualsIgnoreCase(r.Id, reservationIdToExclude) &&
+            r.Status != ReservationStatus.Cancelled &&
             r.EndTime > DateTime.UtcNow &&
             startTime < r.EndTime.Add(buffer) &&
             endTime > r.StartTime.Subtract(buffer));
