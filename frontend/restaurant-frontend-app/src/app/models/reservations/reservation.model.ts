@@ -17,6 +17,8 @@ export interface Reservation {
   preOrder?: Order;
   preOrders?: Order[];
   guestInviteLinkAvailable?: boolean;
+  /** When the reservation was made; absent for reservations made before the backend stored it. */
+  createdAt?: Date | string | null;
 }
 
 export enum ReservationStatus {
@@ -44,6 +46,7 @@ export interface ReservationCustomer {
   preOrders?: Order[];
   createdByName?: string;
   createdByRole?: 'Customer' | 'Waiter';
+  createdAt?: Date | string | null;
 }
 
 export enum ReservationStatusCustomer {

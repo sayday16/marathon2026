@@ -151,13 +151,30 @@ describe('ReservationInviteModalComponent', () => {
     expect(router.navigate).toHaveBeenCalledWith(['/reservations']);
   });
 
-  it('closes and navigates to the menu on Make Pre-Order', () => {
+  it('shows when the reservation was booked', () => {
+    render({ ...BASE_RESERVATION, createdAt: '2026-11-01T11:20:00Z' });
+
+    const booked = element.querySelector('.booked-at')?.textContent ?? '';
+    expect(booked).toContain('Nov 1, 2026');
+  });
+
+  it('does not show the booking time when the backend has none', () => {
+    render(BASE_RESERVATION);
+
+    expect(element.querySelector('.booked-at')).toBeNull();
+  });
+
+  it('closes and opens the menu in the pre-order mode of the new reservation on Make Pre-Order', () => {
     render(BASE_RESERVATION);
     spyOn(component.closed, 'emit');
 
     element.querySelector<HTMLButtonElement>('.pre-order-btn')!.click();
 
     expect(component.closed.emit).toHaveBeenCalled();
-    expect(router.navigate).toHaveBeenCalledWith(['/menu']);
+    const [commands, extras] = (router.navigate as jasmine.Spy).calls.mostRecent().args;
+    expect(commands).toEqual(['/menu']);
+    expect(extras.queryParams.preOrder).toBe('true');
+    expect(extras.queryParams.reservationId).toBe('res-1');
+    expect(extras.queryParams.reservationLabel).toContain('48 Rustaveli Avenue');
   });
 });
