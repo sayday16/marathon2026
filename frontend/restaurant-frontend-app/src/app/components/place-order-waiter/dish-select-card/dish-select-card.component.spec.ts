@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TEST_DISH } from '@app/testing/fixtures';
 
 import { DishSelectCardComponent } from './dish-select-card.component';
 
@@ -13,6 +14,7 @@ describe('DishSelectCardComponent', () => {
 
     fixture = TestBed.createComponent(DishSelectCardComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('dish', TEST_DISH);
     fixture.detectChanges();
   });
 

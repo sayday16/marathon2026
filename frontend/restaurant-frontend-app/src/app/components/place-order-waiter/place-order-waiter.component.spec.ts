@@ -1,4 +1,9 @@
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { of } from 'rxjs';
+import { AuthenticationService } from '@app/auth/services/authentication.service';
+import { TEST_WAITER } from '@app/testing/fixtures';
 import { PlaceOrderWaiterComponent } from './place-order-waiter.component';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 
@@ -8,7 +13,18 @@ describe('PlaceOrderWaiterComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [{ provide: API_BASE_URL, useValue: 'https://test.api' }],
+      providers: [
+        { provide: API_BASE_URL, useValue: 'https://test.api' },
+        {
+          provide: AuthenticationService,
+          useValue: jasmine.createSpyObj<AuthenticationService>('AuthenticationService', {
+            getUser: TEST_WAITER,
+            getUserNameById$: of('Test Customer'),
+          }),
+        },
+        provideHttpClient(),
+        provideHttpClientTesting(),
+      ],
       imports: [PlaceOrderWaiterComponent],
     }).compileComponents();
 
