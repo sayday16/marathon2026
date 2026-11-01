@@ -4,6 +4,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { WaiterDashboardComponent } from './waiter-dashboard.component';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
+import { ReservationCustomer, ReservationStatusCustomer } from '@app/models/reservations/reservation.model';
 
 describe('WaiterDashboardComponent', () => {
   let component: WaiterDashboardComponent;
@@ -27,6 +28,40 @@ describe('WaiterDashboardComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  describe('changing the status of a reservation', () => {
+    it('shows the new status on the card although the API answers with a message only', () => {
+      const httpMock = TestBed.inject(HttpTestingController);
+      component.reservations.set([
+        { id: 'res-1', status: ReservationStatusCustomer.Reserved },
+        { id: 'res-2', status: ReservationStatusCustomer.Reserved },
+      ] as ReservationCustomer[]);
+
+      component.onReservationStatusChanged({ id: 'res-1', newStatus: ReservationStatusCustomer.InProgress });
+
+      const request = httpMock.expectOne((candidate) => candidate.url.endsWith('/reservations/res-1/status'));
+      expect(request.request.method).toBe('PATCH');
+      expect(request.request.body).toEqual({ newStatus: ReservationStatusCustomer.InProgress });
+      request.flush({ message: 'Reservation status updated successfully.' });
+
+      expect(component.reservations().map((reservation) => reservation.status)).toEqual([
+        ReservationStatusCustomer.InProgress,
+        ReservationStatusCustomer.Reserved,
+      ]);
+    });
+
+    it('keeps the status when the API rejects the change', () => {
+      const httpMock = TestBed.inject(HttpTestingController);
+      component.reservations.set([{ id: 'res-1', status: ReservationStatusCustomer.Reserved }] as ReservationCustomer[]);
+
+      component.onReservationStatusChanged({ id: 'res-1', newStatus: ReservationStatusCustomer.InProgress });
+      httpMock
+        .expectOne((candidate) => candidate.url.endsWith('/reservations/res-1/status'))
+        .flush({ error: 'Cannot update' }, { status: 400, statusText: 'Bad Request' });
+
+      expect(component.reservations()[0].status).toBe(ReservationStatusCustomer.Reserved);
+    });
   });
 
   describe('loading the reservations', () => {
