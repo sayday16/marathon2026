@@ -9,7 +9,7 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { catchError, forkJoin, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, forkJoin, from, map, mergeMap, Observable, of, switchMap, toArray } from 'rxjs';
 
 import { AuthenticationService } from '@app/auth/services/authentication.service';
 import { CardReservationComponent } from '@app/components/reservations/card-reservation/card-reservation.component';
@@ -19,6 +19,7 @@ import { CreateOrderRequest } from '@app/models/cart/create-order-request.model'
 import {
   Reservation,
   ReservationCustomer,
+  ReservationStatus,
   ReservationStatusCustomer,
 } from '@app/models/reservations/reservation.model';
 import { SelectOption } from '@app/models/shared/select-option.model';
@@ -56,6 +57,9 @@ interface ReservationCardViewModel {
   availableTableOptions: string[];
   availableTableOptionsMap: Map<string, string>;
 }
+
+/** Cards of the waiter list loaded in parallel; each of them sends three requests. */
+const MAX_CARDS_LOADED_AT_ONCE = 4;
 
 const ANY_TABLE_OPTION: SelectOption = {
   text: 'Any Table',
@@ -458,11 +462,20 @@ export class WaiterDashboardComponent implements OnInit {
     this.reservationService
       .getReservationsForUser$()
       .pipe(
+        // A cancelled reservation needs no action of the waiter: it is neither listed nor enriched with extra requests.
+        map((reservations) => reservations.filter((reservation) => reservation.status !== ReservationStatus.Cancelled)),
         switchMap((reservations) =>
           reservations.length === 0
             ? of([] as ReservationCustomer[])
-            : forkJoin(
-              reservations.map((reservation) => this.enrichReservation(reservation, waiterName))
+            : // Every card needs three requests: a few cards at a time keep the API from rejecting the rest.
+            from(reservations.map((reservation, index) => ({ reservation, index }))).pipe(
+              mergeMap(
+                ({ reservation, index }) =>
+                  this.enrichReservation(reservation, waiterName).pipe(map((card) => ({ card, index }))),
+                MAX_CARDS_LOADED_AT_ONCE,
+              ),
+              toArray(),
+              map((loaded) => loaded.sort((first, second) => first.index - second.index).map(({ card }) => card)),
             )
         ),
         takeUntilDestroyed(this.destroyRef)
