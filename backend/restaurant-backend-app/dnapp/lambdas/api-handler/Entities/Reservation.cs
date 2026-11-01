@@ -46,4 +46,9 @@ public class Reservation
     [DynamoDBProperty("status")]
     [JsonPropertyName("status")]
     public ReservationStatus Status { get; set; }
+
+    /// <summary>When the reservation was made (UTC). Null for reservations made before the field existed.</summary>
+    [DynamoDBProperty("createdAt")]
+    [JsonPropertyName("createdAt")]
+    public DateTime? CreatedAt { get; set; }
 }
