@@ -64,8 +64,9 @@ public static class TimeSlotCalculator
         return slots;
     }
 
+    // The same rule as creating a reservation: a 15 minute gap is kept on both sides of every reservation.
     private static bool IsOverlapping(DateTime slotStart, DateTime slotEnd, DateTime reservationStart, DateTime reservationEnd)
     {
-        return slotStart < reservationEnd && reservationStart < slotEnd;
+        return slotStart < reservationEnd.Add(GapDuration) && slotEnd > reservationStart.Subtract(GapDuration);
     }
 }

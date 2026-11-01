@@ -71,6 +71,32 @@ public class TimeSlotCalculatorTests
     }
 
     [Fact]
+    public void Calculate_KeepsTheGapBeforeTheNextReservation()
+    {
+        // 12:00 - 13:30 would end exactly when the booking at 13:30 starts, but creating a reservation needs 15 minutes of gap.
+        var booking = Booking(At(13, 30), At(15), ReservationStatus.Reserved);
+
+        var starts = StartsOf(At(10), booking);
+
+        Assert.DoesNotContain(At(12), starts);
+        Assert.Equal(At(15, 15), starts.First(start => start > At(13, 30)));
+    }
+
+    [Fact]
+    public void Calculate_EverySlotItOffersCanBeBooked()
+    {
+        var active = Booking(At(13, 30), At(15), ReservationStatus.Reserved);
+        var cancelled = Booking(At(11, 45), At(13, 15), ReservationStatus.Cancelled);
+        var gap = TimeSlotCalculator.GapDuration;
+
+        var slots = TimeSlotCalculator.Calculate(At(10), [active, cancelled]);
+
+        // The rule of creating a reservation: 15 minutes of gap on both sides of every active reservation.
+        Assert.All(slots, slot => Assert.False(slot.Start < active.EndTime.Add(gap) && slot.End > active.StartTime.Subtract(gap)));
+        Assert.Contains(slots, slot => slot.Start == At(12, 15) || slot.Start == At(10));
+    }
+
+    [Fact]
     public void Calculate_OnlyTheActiveOneOfTwoReservationsBlocks()
     {
         var cancelled = Booking(At(10), At(11, 30), ReservationStatus.Cancelled);
