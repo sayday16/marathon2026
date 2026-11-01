@@ -368,9 +368,20 @@ export class WaiterDashboardComponent implements OnInit {
           );
           this.toast.success('Reservation status updated successfully.', 'Success');
         },
-        error: () =>
-          this.toast.error('The reservation status could not be updated.', 'Reservation'),
+        // The API explains why a change is not allowed (for example, a reservation can be completed only after feedback).
+        error: (error: unknown) =>
+          this.toast.error(this.reasonOf(error) ?? 'The reservation status could not be updated.', 'Reservation'),
       });
+  }
+
+  private reasonOf(error: unknown): string | null {
+    if (!(error instanceof HttpErrorResponse)) {
+      return null;
+    }
+
+    const body = error.error as { error?: unknown; message?: unknown } | null;
+    const text = body?.error ?? body?.message;
+    return typeof text === 'string' && text.length > 0 ? text : null;
   }
 
   onPostponeReservation(reservation: ReservationCustomer): void {

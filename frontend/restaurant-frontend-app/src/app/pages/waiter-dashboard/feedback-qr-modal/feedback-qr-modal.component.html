@@ -1,7 +1,12 @@
 <div class="modal-backdrop">
   <div class="modal-content">
     <div #qrcodeCanvas class="qr-canvas"></div>
+    @if (unavailable) {
+      <h2 class="feedback-title feedback-unavailable">Anonymous feedback is not available right now</h2>
+      <p>The feedback link could not be created. The guest can leave feedback from their own account.</p>
+    } @else {
       <h2 class="feedback-title">Scan to send anonymous feedback</h2>
+    }
     <app-custom-button class="close-button" (click)="close()">Close</app-custom-button>
   </div>
 </div>

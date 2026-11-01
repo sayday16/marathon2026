@@ -99,6 +99,9 @@ export class ReservationService {
   changeReservationStatus$(id: string, newStatus: number): Observable<{ message?: string }> {
     const url = `${this.baseUrl}/reservations/${id}/status`;
     const body = { newStatus };
-    return this.http.patch<{ message?: string }>(url, body);
+    // The caller shows the reason the API gives (for example that feedback is needed first), so no general toast.
+    return this.http.patch<{ message?: string }>(url, body, {
+      context: new HttpContext().set(SKIP_ERROR_TOAST, true),
+    });
   }
 }

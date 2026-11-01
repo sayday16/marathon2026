@@ -51,6 +51,22 @@ describe('WaiterDashboardComponent', () => {
       ]);
     });
 
+    it('tells the reason the API gives when it rejects the change', () => {
+      const httpMock = TestBed.inject(HttpTestingController);
+      const toast = spyOn(component['toast'], 'error');
+      component.reservations.set([{ id: 'res-1', status: ReservationStatusCustomer.InProgress }] as ReservationCustomer[]);
+
+      component.onReservationStatusChanged({ id: 'res-1', newStatus: ReservationStatusCustomer.Finished });
+      httpMock
+        .expectOne((candidate) => candidate.url.endsWith('/reservations/res-1/status'))
+        .flush(
+          { error: 'Cannot complete reservation without feedback or an order.' },
+          { status: 400, statusText: 'Bad Request' },
+        );
+
+      expect(toast).toHaveBeenCalledWith('Cannot complete reservation without feedback or an order.', 'Reservation');
+    });
+
     it('keeps the status when the API rejects the change', () => {
       const httpMock = TestBed.inject(HttpTestingController);
       component.reservations.set([{ id: 'res-1', status: ReservationStatusCustomer.Reserved }] as ReservationCustomer[]);

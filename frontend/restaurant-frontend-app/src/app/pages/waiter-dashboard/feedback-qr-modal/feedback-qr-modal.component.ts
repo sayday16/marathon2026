@@ -35,6 +35,9 @@ export class FeedbackQrModalComponent implements OnInit, OnDestroy {
   private qrCode!: QRCodeStyling;
   feedbackUrl!: string;
 
+  /** The backend could not give a feedback link: the window says so instead of showing an empty code. */
+  unavailable = false;
+
   private readonly qrService = inject(FeedbackQrService);
 
   ngOnInit(): void {
@@ -63,6 +66,7 @@ export class FeedbackQrModalComponent implements OnInit, OnDestroy {
       },
       error: (error) => {
         console.error('Error fetching feedback token:', error);
+        this.unavailable = true;
       },
     });
   }
