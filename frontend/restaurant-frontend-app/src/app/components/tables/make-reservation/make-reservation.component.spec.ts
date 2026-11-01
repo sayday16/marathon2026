@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TEST_TABLE, TEST_TIME_RANGE } from '@app/testing/fixtures';
 
 import { MakeReservationComponent } from './make-reservation.component';
 
@@ -13,6 +14,9 @@ describe('MakeReservationComponent', () => {
 
     fixture = TestBed.createComponent(MakeReservationComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('locationName', 'Rustaveli Avenue 48');
+    fixture.componentRef.setInput('table', TEST_TABLE);
+    fixture.componentRef.setInput('selectedTimeRange', TEST_TIME_RANGE);
     fixture.detectChanges();
   });
 

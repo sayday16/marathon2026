@@ -51,6 +51,12 @@ describe('GeneralInformationComponent', () => {
   let readerResults: WeakMap<FileReader, string>;
   let readerStates: WeakMap<FileReader, FileReader['readyState']>;
 
+  const RealFileReader = window.FileReader;
+
+  afterEach(() => {
+    (window as unknown as { FileReader: unknown }).FileReader = RealFileReader;
+  });
+
   beforeEach(async () => {
     auth = {
       user$: new BehaviorSubject<UserModel | null>(user),
@@ -81,18 +87,27 @@ describe('GeneralInformationComponent', () => {
     readerStates = new WeakMap();
 
     // Control callbacks without reading or decoding real files.
-    spyOnProperty(FileReader.prototype, 'result', 'get')
-      .and.callFake(function (this: FileReader) {
-      return readerResults.get(this) ?? null;
-    });
-
-    spyOnProperty(FileReader.prototype, 'readyState', 'get')
-      .and.callFake(function (this: FileReader) {
-      return readerStates.get(this) ?? FileReader.EMPTY;
-    });
+    // Chrome no longer allows redefining FileReader.prototype.result / readyState, so a controllable
+    // subclass is installed instead and exposes both values as own properties of every instance.
+    class ControlledFileReader extends RealFileReader {
+      constructor() {
+        super();
+        Object.defineProperties(this, {
+          result: {
+            configurable: true,
+            get: () => readerResults.get(this) ?? null,
+          },
+          readyState: {
+            configurable: true,
+            get: () => readerStates.get(this) ?? FileReader.EMPTY,
+          },
+        });
+      }
+    }
+    (window as unknown as { FileReader: unknown }).FileReader = ControlledFileReader;
 
     readSpy = spyOn(
-      FileReader.prototype,
+      ControlledFileReader.prototype,
       'readAsDataURL',
     ).and.callFake(function (this: FileReader) {
       readers.push(this);
@@ -100,7 +115,7 @@ describe('GeneralInformationComponent', () => {
     });
 
     abortSpy = spyOn(
-      FileReader.prototype,
+      ControlledFileReader.prototype,
       'abort',
     ).and.callFake(function (this: FileReader) {
       readerStates.set(this, FileReader.DONE);

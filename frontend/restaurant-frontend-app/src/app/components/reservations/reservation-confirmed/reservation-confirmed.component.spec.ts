@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TEST_RESERVATION } from '@app/testing/fixtures';
 
 import { ReservationConfirmedComponent } from './reservation-confirmed.component';
 
@@ -13,6 +14,7 @@ describe('ReservationConfirmedComponent', () => {
 
     fixture = TestBed.createComponent(ReservationConfirmedComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('reservation', TEST_RESERVATION);
     fixture.detectChanges();
   });
 
