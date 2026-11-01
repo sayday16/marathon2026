@@ -357,11 +357,12 @@ export class WaiterDashboardComponent implements OnInit {
       .changeReservationStatus$(event.id, event.newStatus)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (updated) => {
+        next: () => {
+          // The API confirms with a message only, so the card takes the status that was requested.
           this.reservations.update((items) =>
             items.map((reservation) =>
-              reservation.id === updated.id
-                ? { ...reservation, status: updated.status as ReservationStatusCustomer }
+              reservation.id === event.id
+                ? { ...reservation, status: event.newStatus as ReservationStatusCustomer }
                 : reservation
             )
           );

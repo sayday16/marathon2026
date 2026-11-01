@@ -95,9 +95,10 @@ export class ReservationService {
     return this.http.get<ReservationCustomer>(`${this.baseUrl}/reservations/${reservationId}`);
   }
 
-  changeReservationStatus$(id: string, newStatus: number): Observable<ReservationCustomer> {
+  /** The API answers only with a message, not with the updated reservation. */
+  changeReservationStatus$(id: string, newStatus: number): Observable<{ message?: string }> {
     const url = `${this.baseUrl}/reservations/${id}/status`;
     const body = { newStatus };
-    return this.http.patch<ReservationCustomer>(url, body);
+    return this.http.patch<{ message?: string }>(url, body);
   }
 }
