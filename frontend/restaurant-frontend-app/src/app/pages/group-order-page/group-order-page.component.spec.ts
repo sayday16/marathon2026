@@ -74,6 +74,17 @@ describe('Рівень 2 · сторінка Owner Review', () => {
       expect(element.textContent).toContain('Guest: Andrii');
     });
 
+    it('читає список учасників лише після того, як Owner-сесія створена (інакше немає картки «My Pre-Order»)', () => {
+      const ownerSession = new Subject<string>();
+      service.getOwnerSessionId$.and.returnValue(ownerSession);
+      create();
+      expect(service.getSessions$).not.toHaveBeenCalled();
+
+      ownerSession.next('owner');
+      ownerSession.complete();
+      expect(service.getSessions$).toHaveBeenCalledWith('grp-1');
+    });
+
     it('бейдж статусу: «Collecting pre-orders»', () => {
       expect(create().element.textContent).toContain('Collecting pre-orders');
     });
