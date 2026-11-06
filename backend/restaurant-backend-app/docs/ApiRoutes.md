@@ -1207,8 +1207,10 @@ Response: 200 OK
 ]
 ```
 Errors: `403` caller is not the reservation owner; `404` reservation or group reservation not found;
-`400` no submitted sessions, no dishes in submitted sessions, order not found, group already submitted/closed,
+`400` no submitted sessions, no dishes in submitted sessions, group already submitted/closed,
 or the reservation does not belong to the group.
+
+If the owner has not made a pre-order of their own yet, the order for the reservation is created from the group.
 
 ### `GET` /guest/groups/{groupReservationId}/sessions
 Lists the group participants with their dishes and totals. Owner only.
