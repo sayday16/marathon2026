@@ -74,6 +74,27 @@ public class OrderServiceTests
         Assert.Empty(result);
     }
 
+    [Fact]
+    public async Task GetOrdersByCustomerIdAsync_SkipsOrdersOfCancelledReservations()
+    {
+        var customerId = "customer-123";
+        var keptOrder = new Order { OrderId = "order-kept", CustomerId = customerId, ReservationId = "res-reserved", ReservationAddress = "address", ReservationTime = "time", Dishes = [] };
+        var hiddenOrder = new Order { OrderId = "order-hidden", CustomerId = customerId, ReservationId = "res-cancelled", ReservationAddress = "address", ReservationTime = "time", Dishes = [] };
+        _mockOrderRepository
+            .Setup(r => r.GetOrdersByCustomerIdAsync(customerId))
+            .ReturnsAsync(new List<Order> { keptOrder, hiddenOrder });
+        _mockReservationRepository
+            .Setup(r => r.GetReservationByIdAsync("res-reserved"))
+            .ReturnsAsync(new Reservation { Id = "res-reserved", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Reserved });
+        _mockReservationRepository
+            .Setup(r => r.GetReservationByIdAsync("res-cancelled"))
+            .ReturnsAsync(new Reservation { Id = "res-cancelled", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Cancelled });
+
+        var result = await _orderService.GetOrdersByCustomerIdAsync(customerId);
+
+        Assert.Equal("order-kept", Assert.Single(result).OrderId);
+    }
+
     [Theory]
     [AutoData]
     public async Task ConfirmPreOrderDishAsync_ShouldMarkDishConfirmed_AndSubmitOrderIfAllProcessed(Reservation reservation, Order order)
