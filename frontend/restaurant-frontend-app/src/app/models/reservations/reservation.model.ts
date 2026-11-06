@@ -11,6 +11,8 @@ export interface Reservation {
   status: ReservationStatus;
   locationAddress: string;
   tableCapacity: number;
+  /** «Table 4»: the API does not return it, so the page that knows the table sets it. */
+  tableName?: string;
   restaurantName?: string;
   waiterId: string;
   hasSubmittedPreOrder?: boolean;

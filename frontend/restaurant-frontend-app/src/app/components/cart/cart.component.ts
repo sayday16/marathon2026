@@ -13,6 +13,7 @@ import { Router } from '@angular/router';
 
 import { Order } from '@app/models/orders/order.model';
 import { PreOrdersService } from '@app/services/pre-orders/pre-orders.service';
+import { localizeReservationTime } from '@app/shared/helpers/date-helpers';
 import { buildPreOrderQueryParamsForOrder } from '@app/shared/helpers/pre-order-helpers';
 
 import { CancelOrderModalComponent } from './components/cancel-order-modal/cancel-order-modal.component';
@@ -287,7 +288,12 @@ export class CartComponent implements OnInit {
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (orders) => {
-          this.orders.set(orders);
+          this.orders.set(
+            orders.map((order) => ({
+              ...order,
+              reservationTime: localizeReservationTime(order.reservationTime),
+            })),
+          );
         },
         error: (error) => {
           console.error('Error loading orders:', error);

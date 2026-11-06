@@ -618,6 +618,15 @@ describe('ReservationsPageComponent', () => {
       });
     });
 
+    it('names the table of the new reservation by its number, not by its id', () => {
+      reservationService.makeReservation$.and.returnValue(of(CREATED_RESERVATION));
+      component.onTimeSlotsClick(table, timeRange);
+
+      component.onConfirmReview();
+
+      expect(component.reservation?.tableName).toBe('Table 1');
+    });
+
     it('creates the reservation for the selected table and guests on Confirm', () => {
       reservationService.makeReservation$.and.returnValue(of(CREATED_RESERVATION));
       component.onTimeSlotsClick(table, timeRange);

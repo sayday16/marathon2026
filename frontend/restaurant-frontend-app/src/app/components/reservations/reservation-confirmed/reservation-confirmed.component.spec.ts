@@ -21,4 +21,15 @@ describe('ReservationConfirmedComponent', () => {
   it('should create', () => {
     expect(component).toBeTruthy();
   });
+
+  it('never shows the table id', () => {
+    expect(fixture.nativeElement.textContent).not.toContain(TEST_RESERVATION.tableId);
+  });
+
+  it('names the table when it is known', () => {
+    fixture.componentRef.setInput('reservation', { ...TEST_RESERVATION, tableName: 'Table 4' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.textContent).toContain('Table 4');
+  });
 });

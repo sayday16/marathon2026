@@ -16,18 +16,19 @@ describe('buildPreOrderQueryParams', () => {
     expect(params['reservationId']).toBe('res-1');
   });
 
-  it('describes the reservation by address, table, date and time', () => {
+  it('describes the reservation by address, date and time, and never shows the table id', () => {
     const label = buildPreOrderQueryParams(RESERVATION)['reservationLabel'] as string;
 
     expect(label).toContain('48 Rustaveli Avenue');
-    expect(label).toContain('Table table-1');
     expect(label).toContain(new Date(2026, 10, 3).toDateString());
+    expect(label).not.toContain('table-1');
+    expect(label).not.toContain('Table');
   });
 
-  it('prefers the table name to the table id', () => {
-    const label = buildPreOrderQueryParams({ ...RESERVATION, tableName: 'Window 4' })['reservationLabel'] as string;
+  it('names the table when the caller knows it', () => {
+    const label = buildPreOrderQueryParams({ ...RESERVATION, tableName: 'Table 4' })['reservationLabel'] as string;
 
-    expect(label).toContain('Window 4');
+    expect(label).toContain('48 Rustaveli Avenue, Table 4, ');
     expect(label).not.toContain('table-1');
   });
 

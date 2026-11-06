@@ -1,4 +1,4 @@
-import { addMinutesIso, findClosestDuration, minutesBetween } from './date-helpers';
+import { addMinutesIso, findClosestDuration, localizeReservationTime, minutesBetween } from './date-helpers';
 
 describe('date-helpers', () => {
   describe('addMinutesIso', () => {
@@ -76,6 +76,46 @@ describe('date-helpers', () => {
 
     it('returns the only option when there is one', () => {
       expect(findClosestDuration(500, [60])).toBe(60);
+    });
+  });
+
+  describe('localizeReservationTime', () => {
+    const localTime = (hours: number, minutes: number, utcDay = 2): string =>
+      new Date(Date.UTC(2026, 10, utcDay, hours, minutes)).toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+
+    it('shows the UTC text of the API in the local time', () => {
+      const text = localizeReservationTime('Nov 02, 2026, 4:15 PM - 5:45 PM');
+
+      expect(text).toContain(localTime(16, 15));
+      expect(text).toContain(localTime(17, 45));
+    });
+
+    it('keeps the format of the API text (date, start - end)', () => {
+      expect(localizeReservationTime('Nov 02, 2026, 4:15 PM - 5:45 PM')).toMatch(
+        /^[A-Z][a-z]{2} \d{2}, 2026, \d{1,2}:\d{2} [AP]M - \d{1,2}:\d{2} [AP]M$/,
+      );
+    });
+
+    it('reads 12 AM and 12 PM correctly', () => {
+      const text = localizeReservationTime('Nov 02, 2026, 12:00 PM - 1:30 PM');
+
+      expect(text).toContain(localTime(12, 0));
+      expect(text).toContain(localTime(13, 30));
+    });
+
+    it('moves the end to the next day when the stay passes midnight', () => {
+      const text = localizeReservationTime('Nov 02, 2026, 11:30 PM - 1:00 AM');
+
+      expect(text).toContain(localTime(23, 30));
+      expect(text).toContain(localTime(1, 0, 3));
+    });
+
+    it('returns any other text unchanged', () => {
+      expect(localizeReservationTime('2026-09-07T12:15:00Z')).toBe('2026-09-07T12:15:00Z');
+      expect(localizeReservationTime('')).toBe('');
     });
   });
 });
