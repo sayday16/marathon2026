@@ -54,6 +54,58 @@ describe('TableService', () => {
     req.flush([]);
   });
 
+  describe('findNearestFreeDate$', () => {
+    const slot: TimeRange = { start: '2026-11-18T10:00:00Z', end: '2026-11-18T11:30:00Z' };
+    const slotRequests = () =>
+      httpMock.match((request) => request.url === 'https://test.api/tables/table-1/available-time-slots');
+
+    it('returns the earliest day with a free slot and stops asking further batches', () => {
+      let result: string | null | undefined;
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026').subscribe((value) => (result = value));
+
+      const firstBatch = slotRequests();
+      expect(firstBatch.length).toBe(6);
+      firstBatch.forEach((request, index) => request.flush(index === 2 || index === 4 ? [slot] : []));
+
+      expect(result).toBe('Nov 18, 2026');
+      expect(slotRequests().length).toBe(0);
+    });
+
+    it('goes on with the next batch when the first has no free day', () => {
+      let result: string | null | undefined;
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026').subscribe((value) => (result = value));
+
+      slotRequests().forEach((request) => request.flush([]));
+      const secondBatch = slotRequests();
+      expect(secondBatch.length).toBe(6);
+      secondBatch[0].flush([slot]);
+      secondBatch.slice(1).forEach((request) => request.flush([]));
+
+      expect(result).toBe('Nov 22, 2026');
+    });
+
+    it('returns null when no day in the range has a free slot', () => {
+      let result: string | null | undefined;
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', 12).subscribe((value) => (result = value));
+
+      slotRequests().forEach((request) => request.flush([]));
+      slotRequests().forEach((request) => request.flush([]));
+
+      expect(result).toBeNull();
+    });
+
+    it('treats a failed request as a day without free slots', () => {
+      let result: string | null | undefined;
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', 6).subscribe((value) => (result = value));
+
+      slotRequests().forEach((request) =>
+        request.flush('error', { status: 500, statusText: 'Server Error' })
+      );
+
+      expect(result).toBeNull();
+    });
+  });
+
   describe('getAvailableTablesWithTimeSlots$', () => {
     const filter: TableFilter = { location: null, date: 'Oct 17, 2026', time: '10:00', guests: 2 };
     const tables: Table[] = [

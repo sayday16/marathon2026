@@ -19,7 +19,7 @@ import {
 } from '@app/shared/helpers/date-helpers';
 import { getServerErrorMessage } from '@app/shared/helpers/http-error-helpers';
 import { HttpErrorResponse } from '@angular/common/http';
-import { Subscription } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import { LocationsService } from '@app/services/locations/locations.service';
 import { ReservationService } from '@app/services/reservation/reservation.service';
 import { ReservationConfirmedComponent } from '@app/components/reservations/reservation-confirmed/reservation-confirmed.component';
@@ -38,6 +38,9 @@ const ALL_LOCATIONS_LABEL = 'All Locations';
 const RESERVATION_OVERLAP_MESSAGE =
   "This table isn't free for the whole selected time. Please choose a shorter stay or another slot.";
 const RESERVATION_FAILED_MESSAGE = 'Could not create the reservation. Please try again.';
+const DATE_OPTIONS_COUNT = 90;
+const NEAREST_DATE_SEARCH_DAYS = 60;
+const MAX_TABLES_FOR_NEAREST_DATE = 5;
 
 @Component({
   selector: 'app-reservations-page',
@@ -100,8 +103,7 @@ export class TablesComponent implements OnInit {
       });
   }
   ngOnInit(): void {
-    this.dateOptions = generateDateOptions();
-    console.log('Date options:', this.dateOptions);
+    this.dateOptions = generateDateOptions(DATE_OPTIONS_COUNT);
     this.timeOptions = generateTimeOptions(this.dateOptions[0]);
   }
 
@@ -119,6 +121,11 @@ export class TablesComponent implements OnInit {
   isSubmittingReservation = false;
   isLoading = false;
   private searchSubscription?: Subscription;
+  private nearestDateSubscription?: Subscription;
+
+  /** The closest later day with a free slot, shown when the chosen day has none. */
+  nearestFreeDate: string | null = null;
+  isSearchingNearestDate = false;
 
   // showTimeSlotsModal = false;
   showReviewModal = false;
@@ -126,6 +133,11 @@ export class TablesComponent implements OnInit {
   showReservationConfirmed = false;
   showInviteModal = false;
   showEditReservationModal = false;
+
+  /** The search found tables, but none of them has a free time at the chosen day and time. */
+  get hasNoFreeTimes(): boolean {
+    return this.tables.length > 0 && this.tables.every((table) => table.timeRanges.length === 0);
+  }
 
   get selectedLocationName(): string {
     if (this.selectedTable) {
@@ -186,6 +198,40 @@ export class TablesComponent implements OnInit {
 
     this.selectedFilter = { ...this.lastAppliedFilter, location: null };
     this.onFilter();
+  }
+
+  onPickNearestDate(): void {
+    if (!this.nearestFreeDate || !this.lastAppliedFilter) {
+      return;
+    }
+
+    this.onDateSelected(this.nearestFreeDate);
+    this.selectedFilter = { ...this.lastAppliedFilter, date: this.nearestFreeDate };
+    this.onFilter();
+  }
+
+  private findNearestFreeDate(): void {
+    this.nearestDateSubscription?.unsubscribe();
+    this.nearestFreeDate = null;
+    this.isSearchingNearestDate = false;
+
+    const date = this.lastAppliedFilter?.date;
+    if (!date || !this.hasNoFreeTimes) {
+      return;
+    }
+
+    this.isSearchingNearestDate = true;
+    const searches = this.tables
+      .slice(0, MAX_TABLES_FOR_NEAREST_DATE)
+      .map((table) => this.tableService.findNearestFreeDate$(table.id, date, NEAREST_DATE_SEARCH_DAYS));
+
+    this.nearestDateSubscription = forkJoin(searches)
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((found) => {
+        const days = found.filter((day): day is string => day !== null);
+        this.nearestFreeDate = days.sort((left, right) => Date.parse(left) - Date.parse(right))[0] ?? null;
+        this.isSearchingNearestDate = false;
+      });
   }
 
   // onShowAllClick(table: Table): void {
@@ -348,6 +394,9 @@ export class TablesComponent implements OnInit {
       };
 
       this.searchSubscription?.unsubscribe();
+      this.nearestDateSubscription?.unsubscribe();
+      this.nearestFreeDate = null;
+      this.isSearchingNearestDate = false;
       this.isLoading = true;
       this.searchSubscription = this.tableService
         .getAvailableTablesWithTimeSlots$(filter)
@@ -356,6 +405,7 @@ export class TablesComponent implements OnInit {
           next: (tables) => {
             this.tables = tables;
             this.isLoading = false;
+            this.findNearestFreeDate();
           },
           error: () => {
             this.tables = [];

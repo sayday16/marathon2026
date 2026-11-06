@@ -159,7 +159,7 @@ describe('ReservationsPageComponent', () => {
       tableNumber: 1,
       locationId: 'loc-1',
       capacity: 4,
-      timeRanges: [],
+      timeRanges: [{ start: '2026-10-17T12:00:00Z', end: '2026-10-17T13:30:00Z' }],
     };
     let search$: Subject<Table[]>;
     let searchSpy: jasmine.Spy;
@@ -235,6 +235,63 @@ describe('ReservationsPageComponent', () => {
       newerSearch$.next([]);
 
       expect(component.isLoading).toBeFalse();
+    });
+  });
+
+  describe('a table without free times on the chosen day', () => {
+    const BUSY_TABLE: Table = {
+      id: 'table-1',
+      tableNumber: 1,
+      locationId: 'loc-1',
+      capacity: 8,
+      timeRanges: [],
+    };
+    let nearest$: Subject<string | null>;
+    let nearestSpy: jasmine.Spy;
+
+    beforeEach(() => {
+      const tableService = TestBed.inject(TableService);
+      spyOn(tableService, 'getAvailableTablesWithTimeSlots$').and.returnValue(of([BUSY_TABLE]));
+      nearest$ = new Subject<string | null>();
+      nearestSpy = spyOn(tableService, 'findNearestFreeDate$').and.returnValue(nearest$);
+      component.onDateSelected(component.dateOptions[0]);
+      component.onTimeSelected('10:00');
+      component.onFilter();
+      fixture.detectChanges();
+    });
+
+    it('shows the message instead of grey time buttons', () => {
+      const element: HTMLElement = fixture.nativeElement;
+
+      expect(element.querySelector('.empty-state h3')?.textContent).toContain('No free time on');
+      expect(element.querySelector('app-table-card')).toBeNull();
+    });
+
+    it('looks for the nearest free date after the chosen day', () => {
+      expect(nearestSpy).toHaveBeenCalledWith('table-1', component.dateOptions[0], 60);
+      expect(fixture.nativeElement.textContent).toContain('Looking for the nearest free date');
+    });
+
+    it('offers the nearest free date and searches it when the button is clicked', () => {
+      nearest$.next('Nov 16, 2026');
+      nearest$.complete();
+      fixture.detectChanges();
+
+      const button: HTMLButtonElement = fixture.nativeElement.querySelector('.nearest-date-button');
+      expect(button.textContent?.trim()).toBe('Show free times on Nov 16, 2026');
+
+      button.click();
+
+      expect(component.lastAppliedFilter?.date).toBe('Nov 16, 2026');
+    });
+
+    it('says there is no free time at all when no date is found', () => {
+      nearest$.next(null);
+      nearest$.complete();
+      fixture.detectChanges();
+
+      expect(fixture.nativeElement.querySelector('.nearest-date-button')).toBeNull();
+      expect(fixture.nativeElement.textContent).toContain('no free time in the next 60 days');
     });
   });
 

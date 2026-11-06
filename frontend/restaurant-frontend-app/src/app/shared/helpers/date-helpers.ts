@@ -49,23 +49,28 @@ export function revertFormatDate(dateStr: string): string {
   return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
-export function generateDateOptions(): string[] {
+const DATE_OPTION_FORMATTER = new Intl.DateTimeFormat('en-US', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+});
+
+/** The format of the date dropdowns, for example «Nov 16, 2026». */
+export function formatDateOption(date: Date): string {
+  return DATE_OPTION_FORMATTER.format(date);
+}
+
+export function generateDateOptions(daysCount = 14): string[] {
   const today = new Date();
   const dateOptions: string[] = [];
   if (today.getHours() >= 21 && today.getMinutes() > 15) {
     today.setDate(today.getDate() + 1); // If it's past 10 PM, start from tomorrow
   }
 
-  const formatter = new Intl.DateTimeFormat('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
-
-  for (let i = 0; i < 14; i++) {
+  for (let i = 0; i < daysCount; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
-    dateOptions.push(formatter.format(date));
+    dateOptions.push(formatDateOption(date));
   }
 
   return dateOptions;
