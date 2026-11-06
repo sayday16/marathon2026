@@ -183,9 +183,10 @@ public class GroupReservationService(
         if (mergedItems.Count == 0)
             throw new ValidationException("Submitted guest sessions do not contain any dishes.");
 
-        // The owner may go straight to the group order without a pre-order of their own: the group order then is the pre-order.
+        // The guests' dishes are added to the owner's own pre-order, so it has to exist first (the assignment requires 400).
         Order order = await orderRepository.GetOrderByReservationIdAsync(reservationId)
-            ?? await CreateOrderForReservationAsync(reservation);
+            ?? throw new ValidationException(
+                $"There is no pre-order for reservation '{reservationId}' yet. Make your own pre-order (add at least one dish) first, then confirm the group order.");
 
         foreach (GroupPreOrderItemResponse item in mergedItems)
         {
@@ -211,23 +212,6 @@ public class GroupReservationService(
         await groupReservationRepository.SaveGroupReservationAsync(group);
 
         return mergedItems;
-    }
-
-    private async Task<Order> CreateOrderForReservationAsync(Reservation reservation)
-    {
-        Table? table = await tableRepository.GetTableAsync(reservation.TableId);
-        Location? location = table is null ? null : await locationService.GetLocationByIdAsync(table.LocationId);
-
-        return new Order
-        {
-            OrderId = Guid.NewGuid().ToString(),
-            CustomerId = reservation.CustomerId ?? string.Empty,
-            ReservationId = reservation.Id,
-            ReservationAddress = location?.Address ?? "Unknown Address",
-            ReservationTime = $"{reservation.StartTime:MMM dd, yyyy, h:mm tt} - {reservation.EndTime:h:mm tt}",
-            Dishes = [],
-            Status = OrderStatus.Created,
-        };
     }
 }
 
