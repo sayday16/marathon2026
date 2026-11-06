@@ -373,17 +373,40 @@ public class GroupReservationServiceTests
     }
 
     [Fact]
-    public async Task SubmitGroupPreOrderAsync_OrderNotFound_ThrowsValidationException()
+    public async Task SubmitGroupPreOrderAsync_OwnerHasNoPreOrder_CreatesTheOrderFromTheGroup()
     {
-        ArrangeSubmittableGroup(CreateOrder());
+        var group = ArrangeSubmittableGroup(CreateOrder());
         _orderRepositoryMock.Setup(r => r.GetOrderByReservationIdAsync(ReservationId)).ReturnsAsync((Order?)null);
+        _tableRepositoryMock
+            .Setup(r => r.GetTableAsync("table-1"))
+            .ReturnsAsync(new Table { Id = "table-1", LocationId = "location-1" });
+        _locationServiceMock
+            .Setup(s => s.GetLocationByIdAsync("location-1"))
+            .ReturnsAsync(new Location
+            {
+                Id = "location-1",
+                Address = "1 Test Street",
+                Description = "description",
+                AverageOccupancy = "50%",
+            });
         _guestSessionRepositoryMock
             .Setup(r => r.GetAllByGroupReservationIdAsync(GroupId))
             .ReturnsAsync([CreateSession(true, ("dish1", 2))]);
+        Order? savedOrder = null;
+        _orderRepositoryMock
+            .Setup(r => r.SaveOrderAsync(It.IsAny<Order>()))
+            .Callback<Order>(order => savedOrder = order);
 
-        await Assert.ThrowsAsync<ValidationException>(() => _service.SubmitGroupPreOrderAsync(OwnerId, GroupId, ReservationId));
+        var result = await _service.SubmitGroupPreOrderAsync(OwnerId, GroupId, ReservationId);
 
-        _groupReservationRepositoryMock.Verify(r => r.SaveGroupReservationAsync(It.IsAny<GroupReservation>()), Times.Never);
+        Assert.Equal(new GroupPreOrderItemResponse("dish1", 2), Assert.Single(result));
+        Assert.NotNull(savedOrder);
+        Assert.Equal(ReservationId, savedOrder.ReservationId);
+        Assert.Equal(OwnerId, savedOrder.CustomerId);
+        Assert.Equal("1 Test Street", savedOrder.ReservationAddress);
+        Assert.Equal(OrderStatus.SubmittedByCustomer, savedOrder.Status);
+        Assert.Equal(2, Assert.Single(savedOrder.Dishes).Quantity);
+        Assert.Equal(GroupReservationStatus.Submitted, group.Status);
     }
 
     [Fact]
