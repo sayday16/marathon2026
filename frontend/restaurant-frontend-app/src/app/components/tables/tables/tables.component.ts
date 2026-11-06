@@ -216,14 +216,17 @@ export class TablesComponent implements OnInit {
     this.isSearchingNearestDate = false;
 
     const date = this.lastAppliedFilter?.date;
-    if (!date || !this.hasNoFreeTimes) {
+    const time = this.lastAppliedFilter?.time;
+    if (!date || !time || !this.hasNoFreeTimes) {
       return;
     }
 
     this.isSearchingNearestDate = true;
     const searches = this.tables
       .slice(0, MAX_TABLES_FOR_NEAREST_DATE)
-      .map((table) => this.tableService.findNearestFreeDate$(table.id, date, NEAREST_DATE_SEARCH_DAYS));
+      .map((table) =>
+        this.tableService.findNearestFreeDate$(table.id, date, time, NEAREST_DATE_SEARCH_DAYS)
+      );
 
     this.nearestDateSubscription = forkJoin(searches)
       .pipe(takeUntilDestroyed(this.destroyRef))

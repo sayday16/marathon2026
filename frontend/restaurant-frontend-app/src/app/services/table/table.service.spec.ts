@@ -61,7 +61,7 @@ describe('TableService', () => {
 
     it('returns the earliest day with a free slot and stops asking further batches', () => {
       let result: string | null | undefined;
-      service.findNearestFreeDate$('table-1', 'Nov 15, 2026').subscribe((value) => (result = value));
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', '16:30').subscribe((value) => (result = value));
 
       const firstBatch = slotRequests();
       expect(firstBatch.length).toBe(6);
@@ -71,9 +71,22 @@ describe('TableService', () => {
       expect(slotRequests().length).toBe(0);
     });
 
+    it('asks for slots from the time the guest searched for, not from the opening', () => {
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', '16:30', 6).subscribe();
+
+      const batch = slotRequests();
+      expect(batch.length).toBe(6);
+      batch.forEach((request) => {
+        const sent = new Date(request.request.params.get('startTime')!);
+        expect(sent.getHours()).toBe(16);
+        expect(sent.getMinutes()).toBe(30);
+        request.flush([]);
+      });
+    });
+
     it('goes on with the next batch when the first has no free day', () => {
       let result: string | null | undefined;
-      service.findNearestFreeDate$('table-1', 'Nov 15, 2026').subscribe((value) => (result = value));
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', '16:30').subscribe((value) => (result = value));
 
       slotRequests().forEach((request) => request.flush([]));
       const secondBatch = slotRequests();
@@ -86,7 +99,7 @@ describe('TableService', () => {
 
     it('returns null when no day in the range has a free slot', () => {
       let result: string | null | undefined;
-      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', 12).subscribe((value) => (result = value));
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', '16:30', 12).subscribe((value) => (result = value));
 
       slotRequests().forEach((request) => request.flush([]));
       slotRequests().forEach((request) => request.flush([]));
@@ -96,7 +109,7 @@ describe('TableService', () => {
 
     it('treats a failed request as a day without free slots', () => {
       let result: string | null | undefined;
-      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', 6).subscribe((value) => (result = value));
+      service.findNearestFreeDate$('table-1', 'Nov 15, 2026', '16:30', 6).subscribe((value) => (result = value));
 
       slotRequests().forEach((request) =>
         request.flush('error', { status: 500, statusText: 'Server Error' })
