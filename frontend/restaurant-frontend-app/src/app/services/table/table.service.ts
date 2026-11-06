@@ -2,13 +2,26 @@ import { inject, Injectable } from '@angular/core';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 import { HttpClient } from '@angular/common/http';
 import { Table } from '@app/models/tables/table.model';
-import { catchError, from, map, mergeMap, Observable, of, switchMap, toArray } from 'rxjs';
+import {
+  catchError,
+  concatMap,
+  first,
+  forkJoin,
+  from,
+  map,
+  mergeMap,
+  Observable,
+  of,
+  switchMap,
+  toArray,
+} from 'rxjs';
 import { TableFilter } from '@app/models/tables/table-filter.model';
-import { revertFormatTime } from '@app/shared/helpers/date-helpers';
+import { formatDateOption, revertFormatTime } from '@app/shared/helpers/date-helpers';
 import { TimeRange } from '@app/models/tables/time-range.model';
 import { ReservationCustomer } from '@app/models/reservations/reservation.model';
 
 const TIME_SLOTS_CONCURRENCY = 6;
+const OPENING_TIME = '10:00';
 
 @Injectable({
   providedIn: 'root',
@@ -66,6 +79,38 @@ export class TableService {
     };
 
     return this.http.get<TimeRange[]>(url, { params });
+  }
+
+  /**
+   * The first day after `afterDate` on which the table has a free slot, or null when there is none in the next
+   * `daysToCheck` days. Days are asked in small batches and the search stops at the first hit.
+   */
+  findNearestFreeDate$(tableId: string, afterDate: string, daysToCheck = 60): Observable<string | null> {
+    const firstDay = new Date(afterDate);
+    const days = Array.from({ length: daysToCheck }, (_, index) => {
+      const day = new Date(firstDay);
+      day.setDate(firstDay.getDate() + index + 1);
+      return formatDateOption(day);
+    });
+    const batches: string[][] = [];
+    for (let start = 0; start < days.length; start += TIME_SLOTS_CONCURRENCY) {
+      batches.push(days.slice(start, start + TIME_SLOTS_CONCURRENCY));
+    }
+
+    return from(batches).pipe(
+      concatMap((batch) =>
+        forkJoin(
+          batch.map((day) =>
+            this.getTableTimeSlots(tableId, day, OPENING_TIME).pipe(
+              catchError(() => of<TimeRange[]>([])),
+              map((slots) => (slots.length > 0 ? day : null))
+            )
+          )
+        )
+      ),
+      map((found) => found.find((day) => day !== null) ?? null),
+      first((day) => day !== null, null)
+    );
   }
 
   getAvailableTablesWithoutStartTime$(filter: TableFilter): Observable<Table[]> {

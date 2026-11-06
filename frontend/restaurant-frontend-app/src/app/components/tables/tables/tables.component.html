@@ -26,6 +26,7 @@
               trailingIconPath="assets/svg/calendar.svg"
               [error]="dateError"
               [options]="dateOptions"
+              [selectedOption]="selectedFilter.date ?? undefined"
               (optionSelected)="onDateSelected($event)"
             />
           </div>
@@ -114,6 +115,30 @@
                 Show all slots on {{ lastAppliedFilter.date }}
               </button>
             </div>
+          } @else if (hasNoFreeTimes) {
+            <div class="results-summary">
+              <span class="body-bold">No free time</span>
+              <span class="filter-summary">{{ filterSummary }}</span>
+            </div>
+
+            <div class="empty-state" role="status" aria-live="polite">
+              <img src="assets/svg/no-tables-avaliable.svg" alt="No free time" />
+              <h3>No free time on {{ lastAppliedFilter.date }}</h3>
+              @if (isSearchingNearestDate) {
+                <p>Looking for the nearest free date…</p>
+              } @else if (nearestFreeDate) {
+                <p>Nearest free date: {{ nearestFreeDate }}</p>
+                <button
+                  type="button"
+                  class="button button--primary button--large nearest-date-button"
+                  (click)="onPickNearestDate()"
+                >
+                  Show free times on {{ nearestFreeDate }}
+                </button>
+              } @else {
+                <p>There is no free time in the next 60 days. Try another location or fewer guests.</p>
+              }
+            </div>
           } @else {
             <div class="results-summary">
               <span class="body-bold">
@@ -124,16 +149,18 @@
             </div>
           }
 
-          <div class="table-card-list">
-            @for (table of tables; track table.id) {
-              <app-table-card
-                [table]="table"
-                [location]="getLocationName(table)"
-                [date]="lastAppliedFilter.date!"
-                (timeSlotSelected)="onTimeSlotsClick(table, $event)"
-              />
-            }
-          </div>
+          @if (!hasNoFreeTimes) {
+            <div class="table-card-list">
+              @for (table of tables; track table.id) {
+                <app-table-card
+                  [table]="table"
+                  [location]="getLocationName(table)"
+                  [date]="lastAppliedFilter.date!"
+                  (timeSlotSelected)="onTimeSlotsClick(table, $event)"
+                />
+              }
+            </div>
+          }
         </div>
       }
     </div>
