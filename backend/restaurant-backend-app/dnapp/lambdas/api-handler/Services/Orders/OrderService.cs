@@ -39,13 +39,34 @@ public class OrderService : IOrderService
     {
         var orders = (await _orderRepository.GetOrdersByCustomerIdAsync(customerId)).ToList();
 
-        // The pre-order of a cancelled reservation cannot be edited any more, so the customer's cart does not list it.
         var reservations = await Task.WhenAll(
             orders.Select(order => _reservationRepository.GetReservationByIdAsync(order.ReservationId)));
 
         return orders
-            .Where((_, index) => reservations[index]?.Status != ReservationStatus.Cancelled)
+            .Where((order, index) => ShouldBeListedInCart(order, reservations[index]))
             .ToList();
+    }
+
+    // The cart lists only the pre-orders the customer can still act on: the pre-order of a cancelled reservation, and an
+    // unsubmitted pre-order whose editing window (up to 30 minutes before the start) is over, can be neither edited nor sent.
+    private static bool ShouldBeListedInCart(Order order, Reservation? reservation)
+    {
+        if (reservation is null)
+        {
+            return true;
+        }
+
+        if (reservation.Status == ReservationStatus.Cancelled)
+        {
+            return false;
+        }
+
+        return order.Status != OrderStatus.Created || IsPreOrderEditable(reservation.StartTime);
+    }
+
+    private static bool IsPreOrderEditable(DateTime reservationStartTime)
+    {
+        return DateTime.UtcNow <= reservationStartTime.ToUniversalTime().AddMinutes(-30);
     }
 
     public async Task ConfirmPreOrderDishAsync(string callerId, string reservationId, string dishId, ILambdaLogger logger)
@@ -289,8 +310,7 @@ public class OrderService : IOrderService
 
     private static void EnsurePreOrderEditable(DateTime reservationStartTime)
     {
-        var cutoff = reservationStartTime.ToUniversalTime().AddMinutes(-30);
-        if (DateTime.UtcNow > cutoff)
+        if (!IsPreOrderEditable(reservationStartTime))
             throw new ValidationException($"Pre-orders can only be modified up to 30 minutes before the reservation start time ({reservationStartTime:HH:mm}).");
     }
 
