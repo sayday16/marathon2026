@@ -310,7 +310,7 @@ export class TablesComponent implements OnInit {
       .subscribe({
         next: (reservation) => {
           this.isSubmittingReservation = false;
-          this.reservation = reservation;
+          this.reservation = { ...reservation, tableName: this.tableNameOf(tableId) };
           this.showReviewModal = false;
           this.showInviteModal = true;
         },
@@ -319,6 +319,12 @@ export class TablesComponent implements OnInit {
           this.toastService.error(this.buildReservationErrorMessage(error));
         },
       });
+  }
+
+  /** «Table 4» for a table of the current search result; undefined when the number is not known. */
+  private tableNameOf(tableId: string): string | undefined {
+    const table = this.tables.find((item) => item.id === tableId) ?? this.selectedTable;
+    return table?.id === tableId ? `Table ${table.tableNumber}` : undefined;
   }
 
   private buildReservationErrorMessage(error: HttpErrorResponse): string {
@@ -375,7 +381,7 @@ export class TablesComponent implements OnInit {
       .editReservation$(this.reservation!.id, timeRange, guests)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((updatedReservation) => {
-        this.reservation = updatedReservation;
+        this.reservation = { ...updatedReservation, tableName: this.tableNameOf(updatedReservation.tableId) };
         this.showEditReservationModal = false;
         this.showReservationConfirmed = true;
       });

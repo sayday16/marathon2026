@@ -4,6 +4,7 @@ import { of } from 'rxjs';
 
 import { Order } from '@app/models/orders/order.model';
 import { PreOrdersService } from '@app/services/pre-orders/pre-orders.service';
+import { localizeReservationTime } from '@app/shared/helpers/date-helpers';
 
 import { CartComponent } from './cart.component';
 
@@ -56,6 +57,28 @@ describe('CartComponent', () => {
 
   it('should create', () => {
     expect(component).toBeTruthy();
+  });
+
+  it('shows the time of an order in the local time, like the rest of the site', () => {
+    preOrdersServiceMock.getPreOrders.and.returnValue(
+      of([
+        {
+          orderId: 'order-1',
+          status: 0,
+          reservationId: 'res-1',
+          reservationAddress: 'TEST 1 Test Street, Kyiv',
+          reservationTime: 'Nov 02, 2026, 4:15 PM - 5:45 PM',
+          orderItems: [],
+        },
+      ] as unknown as Order[]),
+    );
+
+    fixture = TestBed.createComponent(CartComponent);
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.orders()[0].reservationTime).toBe(
+      localizeReservationTime('Nov 02, 2026, 4:15 PM - 5:45 PM'),
+    );
   });
 
   it('should emit closeCartEvent when closeCart is called', () => {

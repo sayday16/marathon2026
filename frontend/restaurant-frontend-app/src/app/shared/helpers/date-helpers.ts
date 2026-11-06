@@ -76,6 +76,39 @@ export function generateDateOptions(daysCount = 14): string[] {
   return dateOptions;
 }
 
+const RESERVATION_TIME_TEXT =
+  /^([A-Z][a-z]{2}) (\d{1,2}), (\d{4}), (\d{1,2}):(\d{2}) (AM|PM) - (\d{1,2}):(\d{2}) (AM|PM)$/;
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function toHours24(hours: number, period: string): number {
+  return (hours % 12) + (period === 'PM' ? 12 : 0);
+}
+
+/**
+ * The API writes the time of an order as UTC text («Nov 02, 2026, 4:15 PM - 5:45 PM»), while the rest of the site shows
+ * the local time. Returns the same text in the local time; any other text is returned unchanged.
+ */
+export function localizeReservationTime(text: string): string {
+  const match = RESERVATION_TIME_TEXT.exec(text?.trim() ?? '');
+  const month = match ? MONTH_NAMES.indexOf(match[1]) : -1;
+
+  if (!match || month < 0) {
+    return text;
+  }
+
+  const [, , day, year, startHour, startMinute, startPeriod, endHour, endMinute, endPeriod] = match;
+  const start = new Date(Date.UTC(+year, month, +day, toHours24(+startHour, startPeriod), +startMinute));
+  const end = new Date(Date.UTC(+year, month, +day, toHours24(+endHour, endPeriod), +endMinute));
+  if (end < start) {
+    end.setUTCDate(end.getUTCDate() + 1);
+  }
+
+  const dayText = start.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' });
+  const timeOptions: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: '2-digit' };
+
+  return `${dayText}, ${start.toLocaleTimeString('en-US', timeOptions)} - ${end.toLocaleTimeString('en-US', timeOptions)}`;
+}
+
 export function generateTimeOptions(date: string): string[] {
   const dateObj = new Date(revertFormatDate(date));
   const now = new Date();

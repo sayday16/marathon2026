@@ -28,16 +28,18 @@ export function buildPreOrderQueryParamsForOrder(order: PreOrderOrder): Params {
 export function buildPreOrderQueryParams(reservation: PreOrderReservation): Params {
   const startTime = new Date(reservation.startTime);
   const endTime = new Date(reservation.endTime);
-  const tableLabel = reservation.tableName || `Table ${reservation.tableId}`;
 
   return {
     preOrder: 'true',
     reservationId: reservation.id,
+    // The API does not return the table number, so the table is named only when the caller knows it (never by its id).
     reservationLabel: [
       reservation.locationAddress,
-      tableLabel,
+      reservation.tableName,
       startTime.toDateString(),
       `${startTime.toLocaleTimeString()} - ${endTime.toLocaleTimeString()}`,
-    ].join(', '),
+    ]
+      .filter(Boolean)
+      .join(', '),
   };
 }

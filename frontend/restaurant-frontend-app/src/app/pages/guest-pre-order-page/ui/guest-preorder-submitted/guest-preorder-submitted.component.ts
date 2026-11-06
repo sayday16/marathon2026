@@ -14,7 +14,6 @@ import { GuestCartItem } from '../../state/guest-preorder.store';
 })
 export class GuestPreorderSubmittedComponent {
     readonly invite = input<GuestInvite | null>(null);
-    readonly guestName = input('');
     readonly items = input<GuestCartItem[]>([]);
     readonly total = input(0);
 
