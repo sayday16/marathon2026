@@ -85,7 +85,7 @@ public class OrderServiceTests
             .ReturnsAsync(new List<Order> { keptOrder, hiddenOrder });
         _mockReservationRepository
             .Setup(r => r.GetReservationByIdAsync("res-reserved"))
-            .ReturnsAsync(new Reservation { Id = "res-reserved", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Reserved });
+            .ReturnsAsync(new Reservation { Id = "res-reserved", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Reserved, StartTime = DateTime.UtcNow.AddDays(5) });
         _mockReservationRepository
             .Setup(r => r.GetReservationByIdAsync("res-cancelled"))
             .ReturnsAsync(new Reservation { Id = "res-cancelled", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Cancelled });
@@ -93,6 +93,26 @@ public class OrderServiceTests
         var result = await _orderService.GetOrdersByCustomerIdAsync(customerId);
 
         Assert.Equal("order-kept", Assert.Single(result).OrderId);
+    }
+
+    [Theory]
+    [InlineData(OrderStatus.Created, -3, false)]
+    [InlineData(OrderStatus.Created, 0, false)]
+    [InlineData(OrderStatus.Created, 24, true)]
+    [InlineData(OrderStatus.SubmittedByCustomer, -3, true)]
+    public async Task GetOrdersByCustomerIdAsync_ListsAnUnsubmittedOrderOnlyWhileItCanStillBeEdited(
+        OrderStatus orderStatus, int startsInHours, bool expectedListed)
+    {
+        var customerId = "customer-123";
+        var order = new Order { OrderId = "order-1", CustomerId = customerId, ReservationId = "res-1", ReservationAddress = "address", ReservationTime = "time", Dishes = [], Status = orderStatus };
+        _mockOrderRepository.Setup(r => r.GetOrdersByCustomerIdAsync(customerId)).ReturnsAsync(new List<Order> { order });
+        _mockReservationRepository
+            .Setup(r => r.GetReservationByIdAsync("res-1"))
+            .ReturnsAsync(new Reservation { Id = "res-1", TableId = "table-1", WaiterId = "waiter-1", Status = ReservationStatus.Reserved, StartTime = DateTime.UtcNow.AddHours(startsInHours) });
+
+        var result = await _orderService.GetOrdersByCustomerIdAsync(customerId);
+
+        Assert.Equal(expectedListed, result.Any());
     }
 
     [Theory]
