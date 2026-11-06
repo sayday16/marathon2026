@@ -268,7 +268,7 @@ describe('ReservationsPageComponent', () => {
     });
 
     it('looks for the nearest free date after the chosen day', () => {
-      expect(nearestSpy).toHaveBeenCalledWith('table-1', component.dateOptions[0], 60);
+      expect(nearestSpy).toHaveBeenCalledWith('table-1', component.dateOptions[0], '10:00', 60);
       expect(fixture.nativeElement.textContent).toContain('Looking for the nearest free date');
     });
 

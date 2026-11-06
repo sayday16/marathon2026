@@ -21,7 +21,6 @@ import { TimeRange } from '@app/models/tables/time-range.model';
 import { ReservationCustomer } from '@app/models/reservations/reservation.model';
 
 const TIME_SLOTS_CONCURRENCY = 6;
-const OPENING_TIME = '10:00';
 
 @Injectable({
   providedIn: 'root',
@@ -82,10 +81,16 @@ export class TableService {
   }
 
   /**
-   * The first day after `afterDate` on which the table has a free slot, or null when there is none in the next
-   * `daysToCheck` days. Days are asked in small batches and the search stops at the first hit.
+   * The first day after `afterDate` on which the table has a free slot at or after `time` (the time the guest
+   * searched for), or null when there is none in the next `daysToCheck` days. Days are asked in small batches and
+   * the search stops at the first hit.
    */
-  findNearestFreeDate$(tableId: string, afterDate: string, daysToCheck = 60): Observable<string | null> {
+  findNearestFreeDate$(
+    tableId: string,
+    afterDate: string,
+    time: string,
+    daysToCheck = 60
+  ): Observable<string | null> {
     const firstDay = new Date(afterDate);
     const days = Array.from({ length: daysToCheck }, (_, index) => {
       const day = new Date(firstDay);
@@ -101,7 +106,7 @@ export class TableService {
       concatMap((batch) =>
         forkJoin(
           batch.map((day) =>
-            this.getTableTimeSlots(tableId, day, OPENING_TIME).pipe(
+            this.getTableTimeSlots(tableId, day, time).pipe(
               catchError(() => of<TimeRange[]>([])),
               map((slots) => (slots.length > 0 ? day : null))
             )
