@@ -37,7 +37,15 @@ public class OrderService : IOrderService
 
     public async Task<IEnumerable<Order>> GetOrdersByCustomerIdAsync(string customerId)
     {
-        return await _orderRepository.GetOrdersByCustomerIdAsync(customerId);
+        var orders = (await _orderRepository.GetOrdersByCustomerIdAsync(customerId)).ToList();
+
+        // The pre-order of a cancelled reservation cannot be edited any more, so the customer's cart does not list it.
+        var reservations = await Task.WhenAll(
+            orders.Select(order => _reservationRepository.GetReservationByIdAsync(order.ReservationId)));
+
+        return orders
+            .Where((_, index) => reservations[index]?.Status != ReservationStatus.Cancelled)
+            .ToList();
     }
 
     public async Task ConfirmPreOrderDishAsync(string callerId, string reservationId, string dishId, ILambdaLogger logger)
